@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Lato:ital,wght@0,300;0,400;0,700;1,300&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Alex+Brush&family=Pinyon+Script&family=Syne:wght@500;700;800&family=Marcellus&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-marfil: #F4EDE2;
+  --color-arena: #EFE3D4;
+  --color-champagne: #EADBC6;
+  --color-turquesa-niebla: #C0D3CC;
+  --color-turquesa-agua: #97B8B3;
+  --color-turquesa-profundo: #4E8281;
+  --color-dorado-champagne: #D3B48C;
+  --color-verde-azulado: #778F8C;
+  --color-oceano-profundo: #0F2424;
+
+  --font-cinzel: 'Cinzel', serif;
+  --font-montserrat: 'Montserrat', sans-serif;
+  --font-lato: 'Lato', sans-serif;
+  --font-playfair: 'Playfair Display', serif;
+  --font-cormorant: 'Cormorant Garamond', serif;
+  --font-script: 'Great Vibes', cursive;
+  --font-alex: 'Alex Brush', cursive;
+  --font-syne: 'Syne', sans-serif;
+  --font-marcellus: 'Marcellus', serif;
+}
+
+body {
+  background-color: #F4EDE2;
+  color: #162E2D;
+  font-family: 'Montserrat', var(--font-montserrat), sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-cinzel {
+  font-family: 'Cinzel', var(--font-cinzel), serif;
+}
+
+.font-script {
+  font-family: 'Great Vibes', cursive;
+}
+
+.font-alex {
+  font-family: 'Alex Brush', cursive;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-cormorant {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.font-syne {
+  font-family: 'Syne', sans-serif;
+}
+
+.font-marcellus {
+  font-family: 'Marcellus', serif;
+}
+
+/* OSHUN Luxury Glassmorphism & Cards */
+.oshun-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(211, 180, 140, 0.35);
+  box-shadow: 0 10px 30px -8px rgba(78, 130, 129, 0.12), 0 4px 10px -2px rgba(211, 180, 140, 0.08);
+}
+
+.oshun-card-dark {
+  background: rgba(15, 36, 36, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(211, 180, 140, 0.25);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.4);
+}
+
+/* Buttons from Brand Guide */
+.btn-oshun-primary {
+  background-color: #4E8281;
+  color: #FFFFFF;
+  border-radius: 9999px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px -2px rgba(78, 130, 129, 0.35);
+}
+
+.btn-oshun-primary:hover {
+  background-color: #3E6D6C;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(78, 130, 129, 0.45);
+}
+
+.btn-oshun-secondary {
+  background-color: transparent;
+  color: #4E8281;
+  border: 1.5px solid #4E8281;
+  border-radius: 9999px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.btn-oshun-secondary:hover {
+  background-color: rgba(78, 130, 129, 0.08);
+  border-color: #3E6D6C;
+}
+
+.btn-oshun-gold {
+  background-color: #D3B48C;
+  color: #0F2424;
+  border-radius: 9999px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px -2px rgba(211, 180, 140, 0.4);
+}
+
+.btn-oshun-gold:hover {
+  background-color: #C7A477;
+  transform: translateY(-1px);
+}
+
+/* Delicate Wave Background Pattern */
+.bg-oshun-waves {
+  background-color: #F4EDE2;
+  background-image: radial-gradient(circle at 10% 20%, rgba(192, 211, 204, 0.4) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(211, 180, 140, 0.25) 0%, transparent 40%);
+}
+
+.bg-oshun-sand {
+  background: linear-gradient(180deg, #F4EDE2 0%, #EFE3D4 100%);
+}
+
+/* KEYFRAME ANIMATIONS FOR TEMPLATES */
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes shimmerGold {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes twinkleStar {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes swayLeaves {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes waxSealGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(211, 180, 140, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(211, 180, 140, 0.8); }
+}
+
+.animate-float-gentle {
+  animation: floatGentle 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkleStar 2s ease-in-out infinite;
+}
+
+.animate-sway {
+  animation: swayLeaves 5s ease-in-out infinite;
+}
+
+.animate-wax-seal {
+  animation: waxSealGlow 2.5s ease-in-out infinite;
+}
+
+.gold-shimmer-text {
+  background: linear-gradient(90deg, #D3B48C 0%, #FFF4E0 50%, #D3B48C 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmerGold 4s linear infinite;
+}
+
+@keyframes petalFall {
+  0% {
+    transform: translateY(-20px) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh) translateX(60px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cloudDrift {
+  0% {
+    transform: translateX(-120px);
+  }
+  100% {
+    transform: translateX(110vw);
+  }
+}
+
+@keyframes doveFly {
+  0% {
+    transform: translateX(-80px) translateY(40px) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(110vw) translateY(-40px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.animate-petal-fall {
+  animation: petalFall 12s linear infinite;
+}
+
+.animate-cloud-drift {
+  animation: cloudDrift 50s linear infinite;
+}
+
+.animate-dove-fly {
+  animation: doveFly 30s linear infinite;
+}
+
+/* Dramatic Minimal Nude Transition Curve (2.2s cubic-bezier) */
+.transition-dramatic-nude {
+  transition: opacity 2.2s cubic-bezier(0.16, 1, 0.3, 1), transform 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Organic Botanical Transition Curve (2.0s cubic-bezier) */
+.transition-organic-botanical {
+  transition: opacity 2.0s cubic-bezier(0.25, 1, 0.5, 1), transform 2.0s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Botanical Subtle Texture Overlay */
+.botanical-pattern-bg {
+  background-color: #FDFBF7;
+  background-image: radial-gradient(#8A9A86 0.75px, transparent 0.75px), radial-gradient(#4A5D4E 0.75px, #FDFBF7 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+/* 3D Envelope Animation */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.origin-top {
+  transform-origin: top center;
+}
+
+/* Realistic Luxury Paper Texture & Envelope Depth */
+.luxury-paper-shadow {
+  box-shadow: 0 25px 50px -12px rgba(45, 59, 48, 0.3), 0 0 0 1px rgba(138, 154, 134, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+.luxury-wax-seal {
+  box-shadow: 0 6px 16px rgba(45, 59, 48, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.envelope-card-shadow {
+  box-shadow: 0 30px 60px -15px rgba(45, 59, 48, 0.35), 0 0 0 1px rgba(211, 180, 140, 0.4);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #EFE3D4;
+}
+::-webkit-scrollbar-thumb {
+  background: #97B8B3;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4E8281;
+}

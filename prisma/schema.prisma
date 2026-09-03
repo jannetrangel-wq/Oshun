@@ -1,0 +1,243 @@
+// Prisma Schema para INVITA MX - Plataforma SaaS de Gestión de Eventos e Invitaciones Digitales
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  ORGANIZER
+  STAFF
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum EventCategory {
+  BODA
+  XV
+  CUMPLEANOS
+  BAUTIZO
+  BABY_SHOWER
+  DESPEDIDA
+  GRADUACION
+  ANIVERSARIO
+  PRIMERA_COMUNION
+  EMPRESARIAL
+  FIESTA_INFANTIL
+  REUNION_FAMILIAR
+  PRIVADO
+  OTRO
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum GuestStatus {
+  CONFIRMED
+  PENDING
+  DECLINED
+  CHECKED_IN
+}
+
+enum MessageType {
+  INVITATION
+  REMINDER
+  CONFIRMATION
+  LAST_NOTICE
+  THANK_YOU
+}
+
+model Tenant {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  plan          PlanTier       @default(PRO)
+  maxEvents     Int            @default(10)
+  maxGuests     Int            @default(1000)
+  whiteLabel    Boolean        @default(false)
+  users         User[]
+  events        Event[]
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model User {
+  id            String      @id @default(cuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name          String
+  email         String      @unique
+  passwordHash  String?
+  role          Role        @default(ORGANIZER)
+  avatarUrl     String?
+  events        Event[]
+  checkInLogs   CheckInLog[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Event {
+  id               String            @id @default(cuid())
+  tenantId         String
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User              @relation(fields: [userId], references: [id])
+  title            String
+  slug             String            @unique
+  category         EventCategory     @default(BODA)
+  date             DateTime
+  time             String
+  venueName        String
+  address          String
+  city             String
+  description      String?           @db.Text
+  status           EventStatus       @default(PUBLISHED)
+  designConfig     Json              // Stores templateId, colors, fonts, sections config
+  guests           Guest[]
+  guestGroups      GuestGroup[]
+  messageTemplates MessageTemplate[]
+  rsvps            RsvpResponse[]
+  checkInLogs      CheckInLog[]
+  analyticsLogs    AnalyticsLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([tenantId])
+  @@index([slug])
+}
+
+model GuestGroup {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String   // Familia Novia, Amigos, VIP, etc.
+  color     String?  // Hex swatch
+  guests    Guest[]
+  createdAt DateTime @default(now())
+}
+
+model Guest {
+  id                  String             @id @default(cuid())
+  eventId             String
+  event               Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId             String?
+  group               GuestGroup?        @relation(fields: [groupId], references: [id])
+  code                String             // VIP01, ANA02
+  name                String
+  phone               String
+  email               String?
+  status              GuestStatus        @default(PENDING)
+  allowedCompanions   Int                @default(1)
+  confirmedCompanions Int                @default(0)
+  tableNumber         String?
+  dietaryRestrictions String?            @default("Ninguna")
+  notes               String?            @db.Text
+  checkedIn           Boolean            @default(false)
+  checkedInAt         DateTime?
+  checkedInBy         String?
+  rsvpRespondedAt     DateTime?
+  companions          GuestCompanion[]
+  rsvps               RsvpResponse[]
+  checkInLogs         CheckInLog[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@unique([eventId, code])
+  @@index([eventId])
+}
+
+model GuestCompanion {
+  id                  String   @id @default(cuid())
+  guestId             String
+  guest               Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  name                String
+  dietaryRestrictions String?
+  createdAt           DateTime @default(now())
+}
+
+model RsvpResponse {
+  id                  String      @id @default(cuid())
+  eventId             String
+  event               Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId             String
+  guest               Guest       @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  status              GuestStatus
+  confirmedCount      Int
+  dietaryRestrictions String?
+  message             String?     @db.Text
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime    @default(now())
+}
+
+model CheckInLog {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId     String
+  guest       Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  staffUserId String?
+  staffUser   User?    @relation(fields: [staffUserId], references: [id])
+  method      String   @default("QR_SCAN") // QR_SCAN | MANUAL_SEARCH
+  headcount   Int      @default(1)
+  createdAt   DateTime @default(now())
+}
+
+model MessageTemplate {
+  id        String      @id @default(cuid())
+  eventId   String?
+  event     Event?      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  type      MessageType
+  title     String
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan             PlanTier  @default(PRO)
+  status           String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
+  currentPeriodEnd DateTime
+  amount           Decimal   @db.Decimal(10, 2)
+  currency         String    @default("MXN")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model AnalyticsLog {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventType String   // INVITATION_OPEN, RSVP_CLICK, MAP_CLICK, WAZE_CLICK, GIFT_CLICK
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String   // GUEST_CREATED, EVENT_PUBLISHED, CHECKIN_RECORDED
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
