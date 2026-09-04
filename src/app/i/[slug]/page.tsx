@@ -64,6 +64,7 @@ export default function PublicInvitationPage() {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const currentEvent = InvitaStore.getEventBySlug(slug) || InvitaStore.getEvents()[0];
     if (currentEvent) {
       setEvent(currentEvent);

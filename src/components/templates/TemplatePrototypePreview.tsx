@@ -59,7 +59,24 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
   const [showEditGuides, setShowEditGuides] = useState<boolean>(true);
   const [isEnvelopeOpened, setIsEnvelopeOpened] = useState(false);
   const [copiedClabe, setCopiedClabe] = useState(false);
+  const [copiedClabeId, setCopiedClabeId] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+
+  const handleCopyAnyClabe = (clabeNumber: string = '012180015678901234', templateKey: string = 'default') => {
+    try {
+      navigator.clipboard.writeText(clabeNumber);
+    } catch {
+      // fallback
+    }
+    setCopiedClabeId(templateKey);
+    setCopiedClabe(true);
+    setCopiedBankClabe(true);
+    setTimeout(() => {
+      setCopiedClabeId(null);
+      setCopiedClabe(false);
+      setCopiedBankClabe(false);
+    }, 3000);
+  };
 
   // Audio Ref for cleanup on unmount and navigation
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -84,35 +101,108 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [copiedBankClabe, setCopiedBankClabe] = useState(false);
 
+  // Generic Templates (3-10) Interactive RSVP State
+  const [genericRsvpName, setGenericRsvpName] = useState('');
+  const [genericRsvpPhone, setGenericRsvpPhone] = useState('');
+  const [genericRsvpCompanions, setGenericRsvpCompanions] = useState(2);
+  const [genericRsvpSubmitted, setGenericRsvpSubmitted] = useState<{ [key: string]: boolean }>({});
+
+  const handleGenericRsvpSubmit = (e: React.FormEvent, key: string) => {
+    e.preventDefault();
+    if (!genericRsvpName.trim()) return;
+    try {
+      confetti({
+        particleCount: 70,
+        spread: 80,
+        origin: { y: 0.7 },
+      });
+    } catch {
+      // ignore
+    }
+    setGenericRsvpSubmitted((prev) => ({ ...prev, [key]: true }));
+  };
+
   // Dramatic Intro & Scroll Animation State
   const [heroAnimated, setHeroAnimated] = useState(false);
   const [visibleSections, setVisibleSections] = useState<{ [key: string]: boolean }>({});
 
-  // Audio Cleanup on Unmount & Scroll Reset on Mount
-  useEffect(() => {
-    // Force scroll to top on mount
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
+  // Comprehensive Scroll Reset to Top (0, 0)
+  const resetAllScrolls = () => {
+    try {
+      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      const mobileContainers = document.querySelectorAll('.mobile-preview-container, [data-scroll-container], main');
+      mobileContainers.forEach((container) => {
+        (container as HTMLElement).scrollTop = 0;
+      });
+    } catch {
+      // safe fallback
     }
+  };
 
-    return () => {
+  // Audio Cleanup on Unmount, Route Navigation, & Scroll Reset on Mount
+  useEffect(() => {
+    // Force scroll to top on mount immediately and on subsequent frames
+    resetAllScrolls();
+    const frameId = requestAnimationFrame(resetAllScrolls);
+    const timer = setTimeout(resetAllScrolls, 50);
+
+    const stopAudio = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         audioRef.current.src = '';
         audioRef.current = null;
       }
+      setBotanicalIsPlaying(false);
+      setIsMusicPlaying(false);
+    };
+
+    window.addEventListener('popstate', stopAudio);
+    window.addEventListener('pagehide', stopAudio);
+    window.addEventListener('beforeunload', stopAudio);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timer);
+      stopAudio();
+      window.removeEventListener('popstate', stopAudio);
+      window.removeEventListener('pagehide', stopAudio);
+      window.removeEventListener('beforeunload', stopAudio);
     };
   }, []);
 
   useEffect(() => {
+    // Force scroll to top when changing templates
+    resetAllScrolls();
+    const frameId = requestAnimationFrame(resetAllScrolls);
+    const timer1 = setTimeout(resetAllScrolls, 50);
+
+    // Stop any playing audio when switching templates
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    setBotanicalIsPlaying(false);
+    setIsMusicPlaying(false);
+
     // 0.5s initial delay for rendering before starting the 2.2s dramatic slide-up
     const timer = setTimeout(() => {
       setHeroAnimated(true);
     }, 500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timer1);
+      clearTimeout(timer);
+    };
   }, [template?.id]);
 
   const handleStopAudioAndNavigate = () => {
@@ -122,6 +212,8 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
       audioRef.current.src = '';
       audioRef.current = null;
     }
+    setBotanicalIsPlaying(false);
+    setIsMusicPlaying(false);
   };
 
   // Scroll observer helper
@@ -519,6 +611,64 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         </section>
       )}
 
+      {/* 7. Mesa de Regalos & CLABE Bancaria */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="space-y-4 max-w-md mx-auto text-center relative py-6 border-t border-[#E5DFD5] transition-dramatic-nude">
+          <EditBadge label="Mesa de Regalos & CLABE" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-[9px] uppercase tracking-[0.3em] text-[#A89F91] font-semibold block">
+              Mesa de Regalos
+            </span>
+            <h4
+              className="text-xl font-light text-[#3A332C]"
+              style={{ fontFamily: 'Cormorant Garamond, serif' }}
+            >
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & CLABE'}
+            </h4>
+            <p className="text-xs text-[#7A6E60] leading-relaxed">
+              {sections?.giftRegistry?.description || 'Tu compañía y buenos deseos son nuestro mejor obsequio.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 bg-white/90 hover:bg-white border border-[#A89F91]/50 text-center space-y-0.5 block shadow-2xs transition-colors"
+            >
+              <span className="text-xs font-semibold text-[#3A332C] block">Liverpool</span>
+              <span className="text-[10px] text-[#A89F91] font-mono">Evento: #5092812</span>
+            </a>
+            <a
+              href="https://www.elpalaciodehierro.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 bg-white/90 hover:bg-white border border-[#A89F91]/50 text-center space-y-0.5 block shadow-2xs transition-colors"
+            >
+              <span className="text-xs font-semibold text-[#3A332C] block">El Palacio de Hierro</span>
+              <span className="text-[10px] text-[#A89F91] font-mono">Mesa Nupcial</span>
+            </a>
+          </div>
+
+          {/* CLABE Box */}
+          <div className="p-3.5 bg-white/80 border border-[#A89F91]/40 text-left space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#7A6E60]">Transferencia Bancaria (CLABE):</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('012180015678901234', 'minimal-nude')}
+                className="text-[10px] font-bold text-white bg-[#7A6E60] hover:bg-[#685D50] px-2.5 py-0.5 shadow-2xs transition-colors"
+              >
+                {copiedClabeId === 'minimal-nude' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-semibold text-[#3A332C]">BBVA: 012180015678901234</p>
+            <p className="text-[10px] text-[#A89F91]">Titular: Elena Vázquez & Mateo Morales</p>
+          </div>
+        </section>
+      )}
+
       {/* 6. Formulario de Confirmación RSVP con REQUERIMIENTOS ALIMENTICIOS & MENSAJE */}
       <section className="space-y-5 max-w-md mx-auto text-center relative py-8 border-t border-[#E5DFD5] transition-dramatic-nude">
         <EditBadge label="Formulario RSVP Completo" position="top-right" />
@@ -832,9 +982,10 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
     if (!botanicalEnvelopeOpen) {
       return (
         <div
-          className={`botanical-pattern-bg w-full min-h-[760px] flex flex-col items-center justify-center p-4 text-[#2D3B30] selection:bg-[#8A9A86] selection:text-white transition-all duration-700 ${
+          className={`botanical-pattern-bg w-full min-h-full flex-1 flex flex-col items-center justify-center p-4 text-[#2D3B30] selection:bg-[#8A9A86] selection:text-white transition-all duration-700 relative ${
             botanicalEnvelopeFaded ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
+          style={{ width: '100%', minHeight: '100%' }}
         >
           {/* Contenedor del Sobre 3D Centrado */}
           <div className="perspective-1000 w-full max-w-[370px] mx-auto text-center space-y-5 my-auto flex flex-col items-center justify-center">
@@ -1582,151 +1733,1176 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
   );
 };
 
-  // 3. TECH-LUXURY
+  // =========================================================================
+  // 3. TECH-LUXURY (Moderna / Exclusiva) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderTechLuxury = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#FAF6F0]">
-      <div className="text-center space-y-2 pt-2 relative">
-        <EditBadge label="Título Tech & Luxury" position="top-right" theme="gold" />
-        <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#FAF6F0] selection:bg-[#D3B48C] selection:text-[#0A0A0C]">
+      
+      {/* 1. HERO / PORTADA PRINCIPAL */}
+      <section className="text-center space-y-4 pt-2 relative">
+        <EditBadge label="Hero Tech & Luxury" position="top-right" theme="gold" />
+        <span className="text-[10px] uppercase font-bold tracking-[0.35em] text-[#D3B48C] block font-cinzel">
           EXCLUSIVE LUXURY CELEBRATION
         </span>
         <h1 className="text-3xl sm:text-5xl font-cinzel font-bold text-white tracking-widest leading-tight">
           {sections?.hero?.title || 'SANTIAGO & CAMILA'}
         </h1>
-        <p className="text-xs text-[#D3B48C] font-mono tracking-widest pt-1">
+        <p className="text-xs text-[#D3B48C] font-mono tracking-widest">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
 
-      <section className="relative p-6 rounded-3xl bg-white/[0.05] border border-[#D3B48C]/40 shadow-2xl backdrop-blur-xl space-y-4">
-        <EditBadge label="Hero Glassmorphism" position="top-right" theme="gold" />
-        <div className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#D3B48C]/30 shadow-inner">
+        <div className="relative h-72 sm:h-96 w-full rounded-3xl overflow-hidden border border-[#D3B48C]/50 shadow-2xl mt-4">
           <img src={design?.coverImageUrl || template?.previewImage} alt="Tech Luxury" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0C]/80 via-transparent to-transparent" />
-          <div className="absolute bottom-3 left-3 right-3 text-center">
-            <span className="text-xs font-mono text-[#D3B48C]">{sections?.location?.venueName}</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0C] via-transparent to-transparent" />
+          <div className="absolute bottom-4 left-4 right-4 text-center">
+            <span className="text-xs font-mono text-[#D3B48C] bg-[#0A0A0C]/80 px-4 py-1 rounded-full border border-[#D3B48C]/40">
+              ✦ {sections?.location?.venueName} ✦
+            </span>
           </div>
         </div>
       </section>
 
-      <section className="relative p-6 rounded-3xl bg-white/[0.05] border border-[#D3B48C]/30 backdrop-blur-xl space-y-3">
-        <EditBadge label="Carrusel Horizontal Dorado" position="top-right" theme="gold" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[#D3B48C] block font-cinzel">
-          VIP Visual Gallery
+      {/* 2. CUENTA REGRESIVA / TIMER TECH */}
+      <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl text-center space-y-4">
+        <EditBadge label="Countdown Tech" position="top-right" theme="gold" />
+        <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+          COUNTDOWN TO CELEBRATION
         </span>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-          {sections?.gallery?.images?.map((gImg, idx) => (
-            <div key={idx} className="h-32 w-48 shrink-0 rounded-2xl overflow-hidden border border-[#D3B48C]/50 shadow-lg">
-              <img src={gImg} alt="Carousel" className="h-full w-full object-cover" />
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DAYS', value: '169' },
+            { label: 'HOURS', value: '06' },
+            { label: 'MINS', value: '45' },
+            { label: 'SECS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 rounded-2xl bg-black/40 border border-[#D3B48C]/30 text-center">
+              <span className="text-2xl sm:text-3xl font-mono font-bold text-[#D3B48C] block">{t.value}</span>
+              <span className="text-[8px] font-mono text-slate-400 uppercase tracking-widest">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Boda+de+Santiago+y+Camila&dates=20261128T190000Z/20261129T050000Z&details=Exclusive+Luxury+Wedding+Celebration&location=The+St.+Regis+Sky+Ballroom+CDMX"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-xl bg-[#D3B48C]/15 hover:bg-[#D3B48C]/25 text-[#D3B48C] border border-[#D3B48C]/50 font-cinzel text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. NUESTRA HISTORIA / STORYTELLING */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl text-center space-y-3">
+          <EditBadge label="Nuestra Historia VIP" position="top-right" theme="gold" />
+          <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+            OUR STORY & VISION
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-white">
+            {sections?.story?.title || 'Exclusividad & Visión'}
+          </h3>
+          <p className="text-xs text-slate-300 font-mono leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Una velada contemporánea donde la tecnología y la alta costura se encuentran para celebrar nuestra historia de amor.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. ITINERARIO INTERACTIVO */}
+      <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl space-y-4">
+        <EditBadge label="Timeline VIP" position="top-right" theme="gold" />
+        <div className="text-center space-y-1">
+          <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+            EVENT TIMELINE
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-white">Cronograma VIP</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l border-[#D3B48C]/40 pl-6 ml-3">
+          {[
+            { time: '19:00 HRS', title: 'Black Tie Reception & Cocktail', desc: 'Glass Pavilion Terrace' },
+            { time: '20:30 HRS', title: 'Signature Dinner & Grand Toast', desc: 'Imperial Sky Ballroom' },
+            { time: '22:30 HRS', title: 'After Party & Sound Experience', desc: 'The Private Lounge' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-[#D3B48C] shadow-lg shadow-[#D3B48C]/50 ring-4 ring-[#0A0A0C]" />
+              <span className="text-xs font-mono font-bold text-[#D3B48C] block">{item.time}</span>
+              <h4 className="text-sm font-semibold text-white">{item.title}</h4>
+              <p className="text-xs text-slate-400 font-mono">{item.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <button className="w-full py-4 rounded-full bg-gradient-to-r from-[#D3B48C] to-[#B89758] text-[#0A0A0C] font-cinzel font-bold text-xs uppercase tracking-widest shadow-2xl">
-        Access VIP Confirmation • RSVP
-      </button>
+      {/* 5. UBICACIÓN Y SEDE */}
+      <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl space-y-4 text-center">
+        <EditBadge label="Ubicación VIP" position="top-right" theme="gold" />
+        <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+          VENUE & ACCESS
+        </span>
+        <h3 className="text-xl font-cinzel font-bold text-white">{sections?.location?.venueName || 'The St. Regis Sky Ballroom'}</h3>
+        <p className="text-xs text-slate-300 font-mono">{sections?.location?.address || 'Paseo de la Reforma 439, CDMX'}</p>
+        
+        <div className="h-40 rounded-2xl bg-black/60 border border-[#D3B48C]/30 p-4 flex flex-col items-center justify-center space-y-1">
+          <MapPin className="h-7 w-7 text-[#D3B48C] animate-bounce" />
+          <p className="text-xs font-mono text-white">The St. Regis • Piso 51</p>
+          <span className="text-[10px] text-slate-400">Valet Parking & Acceso VIP disponible</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-[#D3B48C]/50 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#D3B48C]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-[#D3B48C]/50 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#D3B48C]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA DE MOMENTOS */}
+      <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl space-y-4">
+        <EditBadge label="Galería Visual" position="top-right" theme="gold" />
+        <div className="text-center space-y-1">
+          <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+            EXCLUSIVE MOMENTS
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-white">Galería VIP</h3>
+        </div>
+        <div className="grid grid-cols-3 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 3).map((gImg, idx) => (
+            <div key={idx} className="h-28 rounded-2xl overflow-hidden border border-[#D3B48C]/40 shadow-lg">
+              <img src={gImg} alt="Gallery" className="h-full w-full object-cover hover:scale-110 transition-transform duration-500" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl text-center space-y-3">
+          <EditBadge label="Dress Code VIP" position="top-right" theme="gold" />
+          <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+            DRESS CODE PROTOCOL
+          </span>
+          <h4 className="text-lg font-cinzel font-bold text-white">
+            {sections?.dressCode?.type || 'Black Tie / Gala Vanguardista'}
+          </h4>
+          <p className="text-xs text-slate-300 font-mono max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Hombres: Smoking negro clásico. Mujeres: Vestido de gala largo en negro, dorado o plata.'}
+          </p>
+          <div className="flex justify-center gap-2.5 pt-1">
+            {['#0A0A0C', '#D3B48C', '#EADBC6', '#FAF6F0'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border border-[#D3B48C]/60 shadow-lg" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE REGALOS & CLABE VIP */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/[0.04] border border-[#D3B48C]/40 backdrop-blur-xl shadow-2xl text-center space-y-4">
+          <EditBadge label="Mesa de Regalos VIP" position="top-right" theme="gold" />
+          <div className="space-y-1">
+            <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+              GIFT REGISTRY & TRANSFER
+            </span>
+            <h4 className="text-xl font-cinzel font-bold text-white">
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & CLABE VIP'}
+            </h4>
+            <p className="text-xs text-slate-300 font-mono">
+              {sections?.giftRegistry?.description || 'Agradecemos de corazón celebrar con nosotros.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://www.elpalaciodehierro.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 rounded-2xl bg-black/50 border border-[#D3B48C]/40 hover:border-[#D3B48C] text-center space-y-1 block transition-all"
+            >
+              <span className="text-xs font-cinzel font-bold text-[#D3B48C] block">El Palacio de Hierro</span>
+              <span className="text-[10px] text-slate-400 font-mono">Evento: #889210</span>
+            </a>
+            <a
+              href="https://amazon.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 rounded-2xl bg-black/50 border border-[#D3B48C]/40 hover:border-[#D3B48C] text-center space-y-1 block transition-all"
+            >
+              <span className="text-xs font-cinzel font-bold text-[#D3B48C] block">Amazon</span>
+              <span className="text-[10px] text-slate-400 font-mono">Luxury Wishlist</span>
+            </a>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-black/60 border border-[#D3B48C]/40 text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#D3B48C]">Transferencia Banorte VIP:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('072180009876543210', 'tech-luxury')}
+                className="text-[10px] font-mono font-bold text-[#0A0A0C] bg-[#D3B48C] hover:bg-[#E5CAA5] px-3 py-1 rounded-full shadow transition-colors"
+              >
+                {copiedClabeId === 'tech-luxury' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-white">CLABE: 072180009876543210</p>
+            <p className="text-[10px] text-slate-400 font-mono">Titular: Santiago & Camila</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. CONFIRMACIÓN DE ASISTENCIA (RSVP) */}
+      <section className="relative p-6 rounded-3xl bg-white/[0.06] border border-[#D3B48C]/60 backdrop-blur-2xl shadow-2xl space-y-4">
+        <EditBadge label="RSVP VIP" position="top-right" theme="gold" />
+        <div className="text-center space-y-1">
+          <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#D3B48C] block font-cinzel">
+            CONFIRMATION PROTOCOL
+          </span>
+          <h3 className="text-2xl font-cinzel font-bold text-white">Confirmación de Asistencia</h3>
+        </div>
+
+        {!genericRsvpSubmitted['tech-luxury'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'tech-luxury')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-[10px] uppercase font-mono tracking-wider text-[#D3B48C] block mb-1">
+                Nombre Completo del Titular:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Ej. Lic. Fernando Herrera"
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-[#D3B48C]/40 text-xs text-white outline-none focus:border-[#D3B48C] font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase font-mono tracking-wider text-[#D3B48C] block mb-1">
+                Pases VIP Solicitados:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-[#D3B48C]/40 text-xs text-white outline-none font-mono"
+              >
+                <option value={1} className="bg-[#0A0A0C]">1 Pase VIP</option>
+                <option value={2} className="bg-[#0A0A0C]">2 Pases VIP</option>
+                <option value={3} className="bg-[#0A0A0C]">3 Pases VIP</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-full bg-gradient-to-r from-[#D3B48C] to-[#B89758] hover:from-[#E5CAA5] hover:to-[#C9A96E] text-[#0A0A0C] font-cinzel font-bold text-xs uppercase tracking-widest shadow-2xl transition-all transform hover:scale-102 active:scale-98"
+            >
+              Access VIP Confirmation • Confirmar
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 rounded-2xl bg-black/60 border border-[#D3B48C] text-center space-y-2">
+            <CheckCircle2 className="h-8 w-8 text-[#D3B48C] mx-auto" />
+            <h4 className="text-lg font-cinzel font-bold text-white">¡Pase VIP Confirmado!</h4>
+            <p className="text-xs font-mono text-[#D3B48C]">
+              Hemos registrado el acceso para {genericRsvpName} ({genericRsvpCompanions} pases).
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 4. ROYAL GOLD
+  // =========================================================================
+  // 4. ROYAL GOLD (Clásica / Gran Gala) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderRoyalGold = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#1A1814]">
-      <section className="relative p-8 sm:p-12 bg-[#FAF6F0] rounded-none border-8 border-double border-[#D3B48C] shadow-2xl text-center space-y-6">
-        <EditBadge label="Sello de Lacre Real" position="top-right" theme="gold" />
-
-        <div className="mx-auto h-20 w-20 rounded-full bg-[#8A1C14] border-4 border-[#D3B48C] shadow-2xl flex items-center justify-center text-[#D3B48C] animate-wax-seal">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#1A1814] selection:bg-[#8A1C14] selection:text-white">
+      
+      {/* 1. HERO / SELLO DE LACRE REAL */}
+      <section className="relative p-8 bg-[#FAF6F0] border-4 border-double border-[#D3B48C] shadow-2xl text-center space-y-5">
+        <EditBadge label="Hero de Gala" position="top-right" theme="gold" />
+        <div className="mx-auto h-20 w-20 rounded-full bg-[#8A1C14] border-4 border-[#D3B48C] shadow-2xl flex items-center justify-center text-[#D3B48C]">
           <span className="font-serif text-2xl font-bold">A & C</span>
         </div>
-
         <div className="space-y-1">
           <span className="text-xs uppercase font-bold tracking-[0.3em] text-[#B89758] block font-playfair">
-            {sections?.hero?.subtitle}
+            {sections?.hero?.subtitle || 'TIENEN EL HONOR DE INVITARLE A SU MATRIMONIO'}
           </span>
           <h1 className="text-3xl sm:text-5xl font-playfair font-black italic text-[#1A1814]">
             {sections?.hero?.title || 'Ana & Carlos'}
           </h1>
           <p className="text-xs text-[#8A1C14] font-playfair font-bold uppercase tracking-widest pt-1">
-            SÁBADO • XIV • NOVIEMBRE • MMXXVI
+            {sections?.hero?.dateText || 'SÁBADO • XIV • NOVIEMBRE • MMXXVI'}
           </p>
         </div>
-
         <div className="relative h-72 w-full rounded-full overflow-hidden border-4 border-[#D3B48C] shadow-2xl mx-auto max-w-sm">
-          <EditBadge label="Retrato Ovalado Real" position="top-left" />
           <img src={design?.coverImageUrl || template?.previewImage} alt="Royal Wedding" className="h-full w-full object-cover" />
         </div>
-
-        <button className="w-full py-4 rounded-none bg-[#8A1C14] hover:bg-[#6D150F] text-white font-playfair font-bold text-sm tracking-widest uppercase shadow-2xl border-2 border-[#D3B48C]">
-          S.R.C. • Confirmar Asistencia de Gala
-        </button>
       </section>
+
+      {/* 2. CUENTA REGRESIVA DE GALA */}
+      <section className="relative p-6 bg-white border-2 border-[#D3B48C] shadow-xl text-center space-y-4">
+        <EditBadge label="Contador de Gala" position="top-right" theme="gold" />
+        <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+          Cuenta Regresiva de Nupcias
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGUNDOS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 bg-[#FAF6F0] border border-[#D3B48C]/50 text-center">
+              <span className="text-2xl sm:text-3xl font-playfair font-bold text-[#8A1C14] block leading-none">{t.value}</span>
+              <span className="text-[8px] font-bold text-[#B89758] uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Boda+de+Ana+y+Carlos&dates=20261114T180000Z/20261115T040000Z&details=Solemne+Matrimonio+de+Gran+Gala&location=Hacienda+San+Jose+de+Gracia+Puebla"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 bg-[#8A1C14] hover:bg-[#6D150F] text-[#FAF6F0] font-playfair text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors border border-[#D3B48C]"
+        >
+          <Calendar className="h-3.5 w-3.5 text-[#D3B48C]" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. NUESTRA HISTORIA / SOLEMNIDAD */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 bg-[#FAF6F0] border-2 border-[#D3B48C] shadow-xl text-center space-y-3">
+          <EditBadge label="Nuestra Historia de Gala" position="top-right" theme="gold" />
+          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+            NUESTRA UNIÓN SOLEMNE
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#1A1814]">
+            {sections?.story?.title || 'Nuestra Unión Solemne'}
+          </h3>
+          <p className="text-xs text-[#7A6E60] font-playfair italic leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Con la bendición de Dios y de nuestras familias, consagramos nuestras vidas en santa unión matrimonial.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. ITINERARIO SOLEMNE */}
+      <section className="relative p-6 bg-white border-2 border-[#D3B48C] shadow-xl space-y-4">
+        <EditBadge label="Orden Nupcial" position="top-right" theme="gold" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+            ORDEN DE LA CELEBRACIÓN
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#1A1814]">Itinerario Nupcial</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-[#D3B48C] pl-6 ml-3">
+          {[
+            { time: '18:00 HRS', title: 'Solemne Ceremonia Religiosa', desc: 'Capilla Mayor del Santuario' },
+            { time: '19:30 HRS', title: 'Brindis & Recepción de Gala', desc: 'Jardín de los Arcos Virreinales' },
+            { time: '21:00 HRS', title: 'Banquete Real & Baile', desc: 'Gran Salón de los Espejos' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-[#8A1C14] border border-[#D3B48C]" />
+              <span className="text-xs font-playfair font-bold text-[#8A1C14] block">{item.time}</span>
+              <h4 className="text-sm font-bold text-[#1A1814]">{item.title}</h4>
+              <p className="text-xs text-[#7A6E60] font-playfair">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. SEDE Y UBICACIÓN */}
+      <section className="relative p-6 bg-white border-2 border-[#D3B48C] shadow-xl space-y-4 text-center">
+        <EditBadge label="Sede Nupcial" position="top-right" theme="gold" />
+        <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+          LUGAR DE LA CELEBRACIÓN
+        </span>
+        <h3 className="text-2xl font-playfair font-bold text-[#1A1814]">{sections?.location?.venueName || 'Hacienda San José de Gracia'}</h3>
+        <p className="text-xs text-[#7A6E60]">{sections?.location?.address || 'Camino Virreinal Km 12, Puebla'}</p>
+
+        <div className="h-40 bg-[#FAF6F0] border border-[#D3B48C] flex flex-col items-center justify-center p-4 space-y-1">
+          <Crown className="h-6 w-6 text-[#B89758]" />
+          <p className="text-xs font-playfair font-bold text-[#1A1814]">Hacienda San José de Gracia</p>
+          <span className="text-[10px] text-[#7A6E60]">Acceso Principal por la Portada Mayor</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 bg-[#FAF6F0] hover:bg-white border border-[#D3B48C] text-[#1A1814] text-xs font-playfair font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#8A1C14]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 bg-[#FAF6F0] hover:bg-white border border-[#D3B48C] text-[#1A1814] text-xs font-playfair font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#8A1C14]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA DE RECUERDOS */}
+      <section className="relative p-6 bg-white border-2 border-[#D3B48C] shadow-xl space-y-4">
+        <EditBadge label="Galería de Gala" position="top-right" theme="gold" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+            MEMORIAS REALES
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#1A1814]">Galería de Recuerdos</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 2).map((gImg, idx) => (
+            <div key={idx} className="h-36 rounded-none border-2 border-[#D3B48C] overflow-hidden p-1 bg-[#FAF6F0]">
+              <img src={gImg} alt="Royal Gallery" className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 bg-[#FAF6F0] border-2 border-[#D3B48C] shadow-xl text-center space-y-3">
+          <EditBadge label="Dress Code Gala" position="top-right" theme="gold" />
+          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+            CÓDIGO DE VESTIMENTA
+          </span>
+          <h4 className="text-xl font-playfair font-bold text-[#8A1C14]">
+            {sections?.dressCode?.type || 'Rigurosa Etiqueta / Gran Gala'}
+          </h4>
+          <p className="text-xs text-[#7A6E60] font-playfair max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Caballeros: Esmoquin o Frac oscuro. Damas: Vestido largo de gala.'}
+          </p>
+          <div className="flex justify-center gap-2.5 pt-1">
+            {['#8A1C14', '#B89758', '#FAF6F0'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border-2 border-[#D3B48C] shadow-sm" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE REGALOS & CLABE DE GALA */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 bg-white border-2 border-[#D3B48C] shadow-xl text-center space-y-4">
+          <EditBadge label="Mesa de Gala" position="top-right" theme="gold" />
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+              MESA DE REGALOS & PRESENTES
+            </span>
+            <h4 className="text-2xl font-playfair font-bold text-[#1A1814]">
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & CLABE de Gala'}
+            </h4>
+            <p className="text-xs text-[#7A6E60] font-playfair">
+              {sections?.giftRegistry?.description || 'El mayor honor es compartir este enlace con ustedes.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://www.elpalaciodehierro.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-[#FAF6F0] border border-[#D3B48C] hover:bg-white text-center space-y-1 block transition-colors"
+            >
+              <span className="text-xs font-playfair font-bold text-[#8A1C14] block">El Palacio de Hierro</span>
+              <span className="text-[10px] text-[#B89758] font-playfair">Evento: #410293</span>
+            </a>
+            <div className="p-3.5 bg-[#FAF6F0] border border-[#D3B48C] text-center space-y-1 block">
+              <span className="text-xs font-playfair font-bold text-[#8A1C14] block">Lluvia de Sobres</span>
+              <span className="text-[10px] text-[#B89758] font-playfair">Buzón en Recepción</span>
+            </div>
+          </div>
+
+          <div className="p-4 bg-[#FAF6F0] border border-[#D3B48C] text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-[#8A1C14] font-playfair">Transferencia Santander Real:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('014180005432109876', 'royal-gold')}
+                className="text-[10px] font-playfair font-bold text-white bg-[#8A1C14] hover:bg-[#6D150F] px-3 py-1 rounded-none shadow transition-colors"
+              >
+                {copiedClabeId === 'royal-gold' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-[#1A1814]">CLABE: 014180005432109876</p>
+            <p className="text-[10px] text-[#7A6E60] font-playfair">Titular: Ana Victoria & Carlos Eduardo</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. CONFIRMACIÓN S.R.C. (RSVP) */}
+      <section className="relative p-6 bg-[#FAF6F0] border-4 border-double border-[#D3B48C] shadow-2xl space-y-4">
+        <EditBadge label="Confirmación S.R.C." position="top-right" theme="gold" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#B89758] block font-playfair">
+            S.R.C. • SE RUEGA CONTESTACIÓN
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#1A1814]">Confirmación de Asistencia</h3>
+        </div>
+
+        {!genericRsvpSubmitted['royal-gold'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'royal-gold')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs uppercase font-playfair font-bold tracking-wider text-[#8A1C14] block mb-1">
+                Nombre de los Distinguidos Invitados:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Familia / Nombre completo"
+                className="w-full px-4 py-3 bg-white border border-[#D3B48C] text-xs text-[#1A1814] outline-none font-playfair"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase font-playfair font-bold tracking-wider text-[#8A1C14] block mb-1">
+                Número de Lugares Reservados:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 bg-white border border-[#D3B48C] text-xs text-[#1A1814] outline-none font-playfair"
+              >
+                <option value={1}>1 Asiento de Gala</option>
+                <option value={2}>2 Asientos de Gala</option>
+                <option value={3}>3 Asientos de Gala</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-[#8A1C14] hover:bg-[#6D150F] text-white font-playfair font-bold text-sm tracking-widest uppercase shadow-2xl border-2 border-[#D3B48C] transition-colors"
+            >
+              S.R.C. • Enviar Confirmación de Gala
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 bg-white border-2 border-[#D3B48C] text-center space-y-2">
+            <Crown className="h-8 w-8 text-[#8A1C14] mx-auto" />
+            <h4 className="text-lg font-playfair font-bold text-[#1A1814]">¡Confirmación Recibida!</h4>
+            <p className="text-xs text-[#7A6E60] font-playfair">
+              Agradecemos la confirmación de {genericRsvpName}. Será un honor contar con su distinguida presencia.
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 5. GLOW PARTY
+  // =========================================================================
+  // 5. GLOW PARTY (XV Años / Fiesta Juvenil) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderGlowParty = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-white">
-      <div className="text-center space-y-2 pt-2 relative">
-        <EditBadge label="Tipografía Display Neón" position="top-right" />
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-white selection:bg-[#E0218A] selection:text-white">
+      
+      {/* 1. HERO NEÓN */}
+      <section className="text-center space-y-4 pt-2 relative">
+        <EditBadge label="Hero Neón" position="top-right" />
         <div className="inline-flex p-3 rounded-full bg-[#E0218A]/20 border border-[#00F0FF] shadow-lg animate-pulse">
           <Flame className="h-6 w-6 text-[#00F0FF]" />
         </div>
-        <h1 className="text-4xl sm:text-5xl font-syne font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#E0218A] via-[#00F0FF] to-[#9900FF] tracking-wider">
+        <h1 className="text-4xl sm:text-5xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#E0218A] via-[#00F0FF] to-[#9900FF] tracking-wider">
           {sections?.hero?.title || 'REGINA • MIS XV AÑOS'}
         </h1>
         <p className="text-xs text-[#00F0FF] font-mono tracking-widest uppercase">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
-
-      <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#00F0FF] shadow-[0_0_30px_rgba(0,240,255,0.3)] transform -rotate-1 space-y-4">
-        <EditBadge label="Bloque Asimétrico XV" position="top-right" />
-        <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#E0218A]">
+        <div className="relative h-72 sm:h-80 w-full rounded-3xl overflow-hidden border-2 border-[#00F0FF] shadow-[0_0_25px_rgba(0,240,255,0.4)] mt-4">
           <img src={design?.coverImageUrl || template?.previewImage} alt="XV Party" className="h-full w-full object-cover" />
         </div>
       </section>
 
-      <button className="w-full py-4 rounded-full bg-gradient-to-r from-[#E0218A] to-[#00F0FF] text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(224,33,138,0.5)]">
-        ⚡ Confirmar Acceso a la Fiesta
-      </button>
+      {/* 2. CUENTA REGRESIVA NEÓN */}
+      <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#E0218A] shadow-[0_0_25px_rgba(224,33,138,0.3)] text-center space-y-4">
+        <EditBadge label="Timer Neón" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#00F0FF] block">
+          ⚡ COUNTDOWN TO THE PARTY ⚡
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 rounded-2xl bg-black/50 border border-[#00F0FF]/40 text-center">
+              <span className="text-2xl sm:text-3xl font-black text-[#00F0FF] block leading-none">{t.value}</span>
+              <span className="text-[8px] font-bold text-[#E0218A] uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Mis+XV+Años+Regina&dates=20261205T200000Z/20261206T040000Z&details=Fiesta+Glow+Night+XV+Años&location=Salon+Crystal+Lights+Monterrey"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-[#E0218A] to-[#00F0FF] text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. NUESTRA HISTORIA / SEMBLANZA XV */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#E0218A] shadow-[0_0_25px_rgba(224,33,138,0.3)] text-center space-y-3">
+          <EditBadge label="Semblanza XV" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#00F0FF] block">
+            MY STORY & SPECIAL NIGHT
+          </span>
+          <h3 className="text-2xl font-bold text-white">
+            {sections?.story?.title || 'Una Noche Inolvidable'}
+          </h3>
+          <p className="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Llegó el momento de celebrar mis 15 años en una fiesta llena de música, luces y grandes momentos con mis personas favoritas.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. ITINERARIO DE FIESTA */}
+      <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#00F0FF] shadow-[0_0_25px_rgba(0,240,255,0.3)] space-y-4">
+        <EditBadge label="Show & Fiesta" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#E0218A] block">
+            LINEUP DE LA NOCHE
+          </span>
+          <h3 className="text-2xl font-bold text-white">Programa de la Fiesta</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-[#E0218A] pl-6 ml-3">
+          {[
+            { time: '20:00 HRS', title: 'Red Carpet & Bienvenida Neón', desc: 'Lobby Principal & Fotos' },
+            { time: '21:30 HRS', title: 'Vals Soñado & Gran Brindis', desc: 'Pista Central Iluminada' },
+            { time: '22:30 HRS', title: 'DJ Live Set & Glow Party', desc: 'Club Room Experience' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-[#00F0FF] shadow-[0_0_10px_#00F0FF]" />
+              <span className="text-xs font-mono font-bold text-[#00F0FF] block">{item.time}</span>
+              <h4 className="text-sm font-bold text-white">{item.title}</h4>
+              <p className="text-xs text-slate-300">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. LUGAR DE LA FIESTA */}
+      <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#E0218A] shadow-[0_0_25px_rgba(224,33,138,0.3)] space-y-4 text-center">
+        <EditBadge label="Lugar de Fiesta" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#00F0FF] block">
+          LOCATION
+        </span>
+        <h3 className="text-2xl font-bold text-white">{sections?.location?.venueName || 'Salón Crystal Lights'}</h3>
+        <p className="text-xs text-slate-300">{sections?.location?.address || 'Av. Las Palmas #450, Monterrey'}</p>
+
+        <div className="h-40 rounded-2xl bg-black/50 border border-[#00F0FF]/40 flex flex-col items-center justify-center p-4 space-y-1">
+          <MapPin className="h-7 w-7 text-[#E0218A] animate-bounce" />
+          <p className="text-xs font-bold text-white">Salón Crystal Lights</p>
+          <span className="text-[10px] text-slate-300">Estacionamiento privado con seguridad</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-[#00F0FF] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#00F0FF]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-[#00F0FF] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#00F0FF]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA SESIÓN XV */}
+      <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#00F0FF] shadow-[0_0_25px_rgba(0,240,255,0.3)] space-y-4">
+        <EditBadge label="Galería XV" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#E0218A] block">
+            MOMENTOS
+          </span>
+          <h3 className="text-2xl font-bold text-white">Sesión de Fotos XV</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 2).map((gImg, idx) => (
+            <div key={idx} className="h-36 rounded-2xl border border-[#E0218A] overflow-hidden">
+              <img src={gImg} alt="XV Gallery" className="h-full w-full object-cover hover:scale-105 transition-transform duration-500" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#E0218A] shadow-[0_0_25px_rgba(224,33,138,0.3)] text-center space-y-3">
+          <EditBadge label="Dress Code Neón" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#00F0FF] block">
+            DRESS CODE
+          </span>
+          <h4 className="text-xl font-bold text-white">
+            {sections?.dressCode?.type || 'Glow Chic / Vestido & Traje Moderno'}
+          </h4>
+          <p className="text-xs text-slate-300 max-w-md mx-auto">
+            {sections?.dressCode?.description || '¡Ven listo para brillar! Acentos metálicos o neón bienvenidos.'}
+          </p>
+          <div className="flex justify-center gap-2.5 pt-1">
+            {['#E0218A', '#00F0FF', '#9900FF', '#FFFFFF'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border-2 border-white shadow-[0_0_10px_rgba(0,240,255,0.5)]" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE REGALOS & LLUVIA DE SOBRES */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#00F0FF] shadow-[0_0_25px_rgba(0,240,255,0.3)] text-center space-y-4">
+          <EditBadge label="Mesa de Regalos XV" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-[#E0218A] block">
+              REGALOS & DETALLES
+            </span>
+            <h4 className="text-2xl font-bold text-white">
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & Sobres Neón'}
+            </h4>
+            <p className="text-xs text-slate-300">
+              {sections?.giftRegistry?.description || '¡Tu presencia hace brillar mi noche! Si deseas hacerme un detalle:'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 rounded-2xl bg-black/60 border border-[#E0218A] text-center space-y-1 block hover:border-[#00F0FF] transition-colors"
+            >
+              <span className="text-xs font-bold text-[#00F0FF] block">Liverpool XV</span>
+              <span className="text-[10px] text-slate-300 font-mono">Evento: #772910</span>
+            </a>
+            <div className="p-3.5 rounded-2xl bg-black/60 border border-[#E0218A] text-center space-y-1 block">
+              <span className="text-xs font-bold text-[#00F0FF] block">Lluvia de Sobres</span>
+              <span className="text-[10px] text-slate-300 font-mono">Cofre Neón en Recepción</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-black/70 border border-[#00F0FF]/40 text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-[#00F0FF]">Transferencia Citibanamex:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('002180076543210987', 'glow-party')}
+                className="text-[10px] font-bold text-white bg-[#E0218A] hover:bg-[#C01B74] px-3 py-1 rounded-full shadow transition-colors"
+              >
+                {copiedClabeId === 'glow-party' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-white">CLABE: 002180076543210987</p>
+            <p className="text-[10px] text-slate-400">Titular: Regina González (Mis XV)</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. RSVP ACCESO VIP */}
+      <section className="relative p-6 rounded-3xl bg-[#1C0C36]/95 border-2 border-[#E0218A] shadow-[0_0_30px_rgba(224,33,138,0.4)] space-y-4">
+        <EditBadge label="RSVP Neón" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#00F0FF] block">
+            CONFIRMA TU ASISTENCIA
+          </span>
+          <h3 className="text-2xl font-bold text-white">¡No te quedes fuera!</h3>
+        </div>
+
+        {!genericRsvpSubmitted['glow-party'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'glow-party')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-[#00F0FF] block mb-1">
+                Nombre de Invitado / Familia:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Escribe tu nombre..."
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-[#E0218A] text-xs text-white outline-none focus:border-[#00F0FF]"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-[#00F0FF] block mb-1">
+                Pases Confirmados:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-[#E0218A] text-xs text-white outline-none"
+              >
+                <option value={1} className="bg-[#1C0C36]">1 Pase</option>
+                <option value={2} className="bg-[#1C0C36]">2 Pases</option>
+                <option value={3} className="bg-[#1C0C36]">3 Pases</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-full bg-gradient-to-r from-[#E0218A] to-[#00F0FF] text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(224,33,138,0.5)] transition-transform hover:scale-102"
+            >
+              ⚡ Confirmar Acceso a la Fiesta
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 rounded-2xl bg-black/60 border border-[#00F0FF] text-center space-y-2">
+            <Flame className="h-8 w-8 text-[#00F0FF] mx-auto animate-bounce" />
+            <h4 className="text-lg font-bold text-white">¡Listo para Brillar!</h4>
+            <p className="text-xs text-[#E0218A]">
+              Pases registrados para {genericRsvpName} ({genericRsvpCompanions} personas).
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 6. CINEMATIC NIGHT
+  // =========================================================================
+  // 6. CINEMATIC NIGHT (Graduaciones / Galas de Honor) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderCinematicNight = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#F8FAFC]">
-      <div className="text-center space-y-2 pt-2 relative">
-        <EditBadge label="Gala Cinematográfica" position="top-right" />
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#F8FAFC] selection:bg-[#3B82F6] selection:text-white">
+      
+      {/* 1. HERO CINEMATOGRÁFICO */}
+      <section className="text-center space-y-4 pt-2 relative">
+        <EditBadge label="Gala de Honor" position="top-right" />
         <div className="inline-block p-2 rounded-full bg-blue-950 border border-blue-400/50">
           <Award className="h-6 w-6 text-blue-400" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-cinzel font-bold text-white tracking-widest uppercase">
-          {sections?.hero?.title || 'GALA DE GRADUACIÓN 2026'}
+        <h1 className="text-3xl sm:text-5xl font-cinzel font-bold text-white tracking-widest uppercase">
+          {sections?.hero?.title || 'GENERACIÓN DE EXCELENCIA 2026'}
         </h1>
         <p className="text-xs text-blue-300 font-mono tracking-widest">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
-
-      <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl space-y-4">
-        <EditBadge label="Retrato de Honor" position="top-right" />
-        <div className="relative h-64 sm:h-80 w-full rounded-xl overflow-hidden border border-slate-600">
+        <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden border border-slate-600 shadow-2xl mt-4">
           <img src={design?.coverImageUrl || template?.previewImage} alt="Graduation" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-transparent" />
         </div>
       </section>
 
-      <button className="w-full py-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs uppercase tracking-wider shadow-xl">
-        Confirmar Asistencia a la Gala
-      </button>
+      {/* 2. CUENTA REGRESIVA DE GRADUACIÓN */}
+      <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl text-center space-y-4">
+        <EditBadge label="Timer Graduación" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+          CUENTA REGRESIVA PARA LA GALA
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 rounded-xl bg-slate-900 border border-slate-700 text-center">
+              <span className="text-2xl sm:text-3xl font-mono font-bold text-blue-400 block leading-none">{t.value}</span>
+              <span className="text-[8px] font-bold text-slate-400 uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Gala+de+Graduacion+2026&dates=20260710T193000Z/20260711T030000Z&details=Gala+de+Graduacion+y+Noche+de+Honor&location=Centro+Internacional+de+Convenciones+Guadalajara"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-colors"
+        >
+          <Calendar className="h-3.5 w-3.5 text-blue-200" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. SEMBLANZA DE GENERACIÓN (NUESTRA HISTORIA) */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl text-center space-y-3">
+          <EditBadge label="Semblanza de Generación" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+            NUESTRO CAMINO AL ÉXITO
+          </span>
+          <h3 className="text-2xl font-cinzel font-bold text-white">
+            {sections?.story?.title || 'Semblanza de Generación'}
+          </h3>
+          <p className="text-xs text-slate-300 font-mono leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Años de entrega, desvelos y aprendizajes compartidos que hoy rinden su máximo fruto en una noche inolvidable de honor y compañerismo.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. PROTOCOLO DE LA GALA */}
+      <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl space-y-4">
+        <EditBadge label="Protocolo" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+            PROGRAMA DE HONOR
+          </span>
+          <h3 className="text-2xl font-cinzel font-bold text-white">Protocolo de la Gala</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-blue-500 pl-6 ml-3">
+          {[
+            { time: '19:30 HRS', title: 'Recepción & Alfombra Azul', desc: 'Foyer Principal & Fotografía de Generación' },
+            { time: '20:30 HRS', title: 'Entrega de Reconocimientos', desc: 'Auditorio Magna de Graduados' },
+            { time: '21:30 HRS', title: 'Cena de Gala & Brindis de Honor', desc: 'Gran Salón de Embajadores' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-blue-500 shadow-md shadow-blue-500/50" />
+              <span className="text-xs font-mono font-bold text-blue-400 block">{item.time}</span>
+              <h4 className="text-sm font-bold text-white">{item.title}</h4>
+              <p className="text-xs text-slate-400">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. SEDE DE LA GALA */}
+      <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl space-y-4 text-center">
+        <EditBadge label="Sede de Gala" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+          SEDE OFICIAL
+        </span>
+        <h3 className="text-2xl font-cinzel font-bold text-white">{sections?.location?.venueName || 'Centro Internacional de Convenciones'}</h3>
+        <p className="text-xs text-slate-400">{sections?.location?.address || 'Av. Fundadores #100, Guadalajara'}</p>
+
+        <div className="h-40 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center p-4 space-y-1">
+          <Building className="h-7 w-7 text-blue-400" />
+          <p className="text-xs font-bold text-white">Centro de Convenciones</p>
+          <span className="text-[10px] text-slate-400">Acceso exclusivo con acreditación digital</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-blue-400" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-blue-400" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA DE MOMENTOS */}
+      <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl space-y-4">
+        <EditBadge label="Memorias" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+            MOMENTOS DE HONOR
+          </span>
+          <h3 className="text-2xl font-cinzel font-bold text-white">Galería de la Generación</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 2).map((gImg, idx) => (
+            <div key={idx} className="h-36 rounded-xl border border-slate-700 overflow-hidden">
+              <img src={gImg} alt="Grad Gallery" className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl text-center space-y-3">
+          <EditBadge label="Dress Code Gala" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+            CÓDIGO DE VESTIMENTA
+          </span>
+          <h4 className="text-xl font-cinzel font-bold text-white">
+            {sections?.dressCode?.type || 'Black Tie / Rigurosa Etiqueta'}
+          </h4>
+          <p className="text-xs text-slate-300 font-mono max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Graduados: Traje de Gala / Esmoquin. Acompañantes: Vestido de noche formal.'}
+          </p>
+          <div className="flex justify-center gap-2 pt-1">
+            {['#030712', '#1E3A8A', '#3B82F6', '#94A3B8', '#F8FAFC'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border border-blue-400/50 shadow-sm" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE HONOR & CLABE DE GENERACIÓN */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl text-center space-y-4">
+          <EditBadge label="Mesa de Honor" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+              MESA DE HONOR & BRINDIS
+            </span>
+            <h4 className="text-2xl font-cinzel font-bold text-white">
+              {sections?.giftRegistry?.title || 'Mesa de Honor & Aportaciones'}
+            </h4>
+            <p className="text-xs text-slate-400">
+              {sections?.giftRegistry?.description || 'Agradecemos tus muestras de afecto y apoyo para los graduados.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-slate-900 border border-slate-700 hover:border-blue-400 text-center space-y-1 block transition-colors rounded-xl"
+            >
+              <span className="text-xs font-bold text-blue-400 block">Liverpool Mesa</span>
+              <span className="text-[10px] text-slate-400 font-mono">Evento: #GALA2026</span>
+            </a>
+            <a
+              href="https://www.amazon.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-slate-900 border border-slate-700 hover:border-blue-400 text-center space-y-1 block transition-colors rounded-xl"
+            >
+              <span className="text-xs font-bold text-blue-400 block">Amazon Wishlist</span>
+              <span className="text-[10px] text-slate-400 font-mono">Graduación 2026</span>
+            </a>
+          </div>
+
+          <div className="p-4 bg-slate-900 border border-blue-500/40 rounded-xl text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-blue-400 font-mono">Transferencia BBVA Comité:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('012180098712345678', 'cinematic-night')}
+                className="text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded-lg shadow transition-colors"
+              >
+                {copiedClabeId === 'cinematic-night' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-white">CLABE: 012180098712345678</p>
+            <p className="text-[10px] text-slate-400">Comité de Graduación Generación 2026</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. CONFIRMACIÓN DE BOLETOS (RSVP) */}
+      <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-blue-500/50 shadow-2xl space-y-4">
+        <EditBadge label="Registro RSVP" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-blue-400 block font-cinzel">
+            CONFIRMACIÓN DE BOLETOS
+          </span>
+          <h3 className="text-2xl font-cinzel font-bold text-white">Registro para la Gala</h3>
+        </div>
+
+        {!genericRsvpSubmitted['cinematic-night'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'cinematic-night')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-blue-400 block mb-1">
+                Nombre de Graduado o Acompañante:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Nombre completo..."
+                className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-blue-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-blue-400 block mb-1">
+                Boletos de Gala Asignados:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none"
+              >
+                <option value={1}>1 Boleto</option>
+                <option value={2}>2 Boletos</option>
+                <option value={4}>4 Boletos (Familiar)</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-xl transition-transform hover:scale-102"
+            >
+              Confirmar Boletos para la Gala
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 rounded-xl bg-slate-900 border border-blue-400 text-center space-y-2">
+            <Award className="h-8 w-8 text-blue-400 mx-auto" />
+            <h4 className="text-lg font-cinzel font-bold text-white">¡Boletos Confirmados!</h4>
+            <p className="text-xs text-blue-300">
+              Hemos registrado la asistencia de {genericRsvpName} ({genericRsvpCompanions} boletos).
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 7. SWEET CELEBRATION
+  // =========================================================================
+  // 7. SWEET CELEBRATION (Infantil / Bautizo) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderSweetCelebration = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#2C3E50]">
-      <div className="text-center space-y-2 pt-2 relative">
-        <EditBadge label="Títulos Infantiles / Bautizo" position="top-right" />
-        <div className="inline-block p-3 rounded-full bg-white/80 border border-[#7AA7C7] shadow-md text-[#7AA7C7]">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#2C3E50] selection:bg-[#7AA7C7] selection:text-white">
+      
+      {/* 1. HERO DULCE */}
+      <section className="text-center space-y-4 pt-2 relative">
+        <EditBadge label="Hero Infantil" position="top-right" />
+        <div className="inline-block p-3 rounded-full bg-white/90 border border-[#7AA7C7] shadow-md text-[#7AA7C7]">
           <Star className="h-6 w-6 text-[#7AA7C7] fill-[#7AA7C7]" />
         </div>
         <h1 className="text-4xl sm:text-5xl font-playfair italic text-[#2C3E50]">
@@ -1735,54 +2911,573 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         <p className="text-xs text-[#7AA7C7] uppercase tracking-widest font-bold">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
-
-      <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-[0_15px_35px_rgba(122,167,199,0.2)] space-y-4">
-        <EditBadge label="Foto Suavizada" position="top-right" />
-        <div className="relative h-64 sm:h-80 w-full rounded-[28px] overflow-hidden border border-[#F5C6CB]">
+        <div className="relative h-72 sm:h-80 w-full rounded-[36px] overflow-hidden border-2 border-[#F5C6CB] shadow-xl mt-4">
           <img src={design?.coverImageUrl || template?.previewImage} alt="Sweet" className="h-full w-full object-cover" />
         </div>
       </section>
 
-      <button className="w-full py-4 rounded-full bg-[#7AA7C7] hover:bg-[#6893B0] text-white font-bold text-xs uppercase tracking-wider shadow-lg">
-        Confirmar Acompañamiento
-      </button>
+      {/* 2. CUENTA REGRESIVA ANGELICAL */}
+      <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-[0_15px_35px_rgba(122,167,199,0.15)] text-center space-y-4">
+        <EditBadge label="Timer Pastel" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+          ✨ DÍAS PARA LA BENDICIÓN ✨
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGUNDOS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 rounded-2xl bg-[#EAF4FC] border border-[#7AA7C7]/30 text-center">
+              <span className="text-2xl sm:text-3xl font-playfair font-bold text-[#7AA7C7] block leading-none">{t.value}</span>
+              <span className="text-[8px] font-bold text-[#2C3E50] uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Bautizo+de+Matias&dates=20261010T120000Z/20261010T180000Z&details=Celebracion+del+Bautizo+de+Matias&location=Jardin+Las+Nubes+Queretaro"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-full bg-[#7AA7C7] hover:bg-[#6893B0] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-colors"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. BENDICIÓN ANGELICAL (NUESTRA HISTORIA / SEMBLANZA) */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-md text-center space-y-3">
+          <EditBadge label="Semblanza Infantil" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+            BENDICIÓN & GRATITUD
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2C3E50]">
+            {sections?.story?.title || 'Bendición Angelical'}
+          </h3>
+          <p className="text-xs text-slate-600 font-playfair italic leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Con inmensa alegría y gratitud en el corazón, recibimos la bendición de Dios para nuestro pequeño ángel.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. PROGRAMA DEL BAUTIZO */}
+      <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-md space-y-4">
+        <EditBadge label="Programa" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+            MOMENTOS DEL DÍA
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2C3E50]">Programa del Bautizo</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-[#7AA7C7] pl-6 ml-3">
+          {[
+            { time: '12:00 HRS', title: 'Santa Misa de Bautizo', desc: 'Templo Expiatorio' },
+            { time: '14:00 HRS', title: 'Comida & Brindis Familiar', desc: 'Jardín Las Nubes' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-[#7AA7C7]" />
+              <span className="text-xs font-bold text-[#7AA7C7] block">{item.time}</span>
+              <h4 className="text-sm font-bold text-[#2C3E50]">{item.title}</h4>
+              <p className="text-xs text-slate-500">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. LUGAR DE LA RECEPCIÓN */}
+      <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-md space-y-4 text-center">
+        <EditBadge label="Lugar del Bautizo" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+          LUGAR DE LA RECEPCIÓN
+        </span>
+        <h3 className="text-2xl font-playfair font-bold text-[#2C3E50]">{sections?.location?.venueName || 'Jardín Las Nubes'}</h3>
+        <p className="text-xs text-slate-500">{sections?.location?.address || 'Calle del Paraíso #88, Querétaro'}</p>
+
+        <div className="h-40 rounded-2xl bg-[#EAF4FC] border border-[#7AA7C7]/40 flex flex-col items-center justify-center p-4 space-y-1">
+          <MapPin className="h-7 w-7 text-[#7AA7C7]" />
+          <p className="text-xs font-bold text-[#2C3E50]">Jardín Las Nubes</p>
+          <span className="text-[10px] text-slate-500">Área infantil y jardines familiares</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-full bg-[#EAF4FC] hover:bg-white border border-[#7AA7C7] text-[#2C3E50] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#7AA7C7]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-full bg-[#EAF4FC] hover:bg-white border border-[#7AA7C7] text-[#2C3E50] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#7AA7C7]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA DE RECUERDOS */}
+      <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-md space-y-4">
+        <EditBadge label="Recuerdos" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+            RECUERDOS DE MATÍAS
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2C3E50]">Galería de Fotos</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 2).map((gImg, idx) => (
+            <div key={idx} className="h-36 rounded-2xl border border-[#F5C6CB] overflow-hidden">
+              <img src={gImg} alt="Sweet Gallery" className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-md text-center space-y-3">
+          <EditBadge label="Dress Code Dulce" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+            CÓDIGO DE VESTIMENTA
+          </span>
+          <h4 className="text-xl font-playfair font-bold text-[#2C3E50]">
+            {sections?.dressCode?.type || 'Blanco & Tonos Pastel'}
+          </h4>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Sugerimos vestir ropa formal o casual en tonos claros, blancos o pasteles.'}
+          </p>
+          <div className="flex justify-center gap-2 pt-1">
+            {['#7AA7C7', '#F5C6CB', '#EAF4FC', '#FFFFFF'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border border-[#7AA7C7]/40 shadow-xs" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE REGALOS & CLABE DE BAUTIZO */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-md text-center space-y-4">
+          <EditBadge label="Mesa de Bautizo" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+              MESA DE REGALOS & SOBRES
+            </span>
+            <h4 className="text-2xl font-playfair font-bold text-[#2C3E50]">
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & Obsequios'}
+            </h4>
+            <p className="text-xs text-slate-500">
+              {sections?.giftRegistry?.description || 'Tu presencia y cariño son el mejor regalo para nuestro bebé.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-[#EAF4FC] border border-[#7AA7C7]/40 hover:bg-white text-center space-y-1 block transition-colors rounded-2xl"
+            >
+              <span className="text-xs font-bold text-[#2C3E50] block">Liverpool Bebés</span>
+              <span className="text-[10px] text-[#7AA7C7] font-mono">Evento: #BAUTIZO2026</span>
+            </a>
+            <a
+              href="https://www.amazon.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-[#EAF4FC] border border-[#7AA7C7]/40 hover:bg-white text-center space-y-1 block transition-colors rounded-2xl"
+            >
+              <span className="text-xs font-bold text-[#2C3E50] block">Amazon Baby</span>
+              <span className="text-[10px] text-[#7AA7C7] font-mono">Wishlist Matías</span>
+            </a>
+          </div>
+
+          <div className="p-4 bg-[#EAF4FC] border border-[#7AA7C7]/50 rounded-2xl text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-[#7AA7C7]">Transferencia Banorte:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('072180011223344556', 'sweet-celebration')}
+                className="text-[10px] font-bold text-white bg-[#7AA7C7] hover:bg-[#6893B0] px-3 py-1 rounded-full shadow-xs transition-colors"
+              >
+                {copiedClabeId === 'sweet-celebration' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-[#2C3E50]">CLABE: 072180011223344556</p>
+            <p className="text-[10px] text-slate-500">Titular: Familia Gómez Navarro</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. CONFIRMACIÓN FAMILIAR (RSVP) */}
+      <section className="relative p-6 rounded-[36px] bg-white/95 border-2 border-[#7AA7C7] shadow-xl space-y-4">
+        <EditBadge label="RSVP Familiar" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#7AA7C7] block">
+            CONFIRMACIÓN FAMILIAR
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2C3E50]">Confirma tu Acompañamiento</h3>
+        </div>
+
+        {!genericRsvpSubmitted['sweet-celebration'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'sweet-celebration')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-[#7AA7C7] block mb-1">
+                Familia / Nombre:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Ej. Familia Gómez..."
+                className="w-full px-4 py-3 rounded-xl bg-[#EAF4FC] border border-[#7AA7C7]/40 text-xs text-[#2C3E50] outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-[#7AA7C7] block mb-1">
+                Número de Personas:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-[#EAF4FC] border border-[#7AA7C7]/40 text-xs text-[#2C3E50] outline-none"
+              >
+                <option value={1}>1 Persona</option>
+                <option value={2}>2 Personas</option>
+                <option value={3}>3 Personas (Familia)</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-full bg-[#7AA7C7] hover:bg-[#6893B0] text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform hover:scale-102"
+            >
+              Confirmar Acompañamiento
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 rounded-2xl bg-[#EAF4FC] border border-[#7AA7C7] text-center space-y-2">
+            <Star className="h-8 w-8 text-[#7AA7C7] fill-[#7AA7C7] mx-auto" />
+            <h4 className="text-lg font-playfair font-bold text-[#2C3E50]">¡Gracias por Confirmar!</h4>
+            <p className="text-xs text-[#7AA7C7]">
+              Hemos registrado la asistencia de {genericRsvpName} ({genericRsvpCompanions} personas).
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 8. ROMANCE CLÁSICO
+  // =========================================================================
+  // 8. ROMANCE CLÁSICO (Romeo & Julieta) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderRomanceClasico = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#2A1810]">
-      <div className="text-center space-y-2 pt-2 relative">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#2A1810] selection:bg-[#722F37] selection:text-white">
+      
+      {/* 1. HERO VINTAGE */}
+      <section className="text-center space-y-4 pt-2 relative">
         <EditBadge label="Caligrafía Manuscrita" position="top-right" />
         <div className="inline-block p-2 text-[#722F37]">
           <Feather className="h-6 w-6 mx-auto" />
         </div>
-        <h1 className="text-4xl sm:text-5xl font-script text-[#722F37]">
+        <h1 className="text-4xl sm:text-5xl font-playfair italic text-[#722F37]">
           {sections?.hero?.title || 'Julieta & Romeo'}
         </h1>
         <p className="text-xs text-[#722F37] uppercase tracking-widest font-semibold font-playfair">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
-
-      <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl space-y-4">
-        <EditBadge label="Retrato Vintage Ovalado" position="top-right" />
-        <div className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#C49A45]">
+        <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden border-2 border-[#C49A45] shadow-xl mt-4">
           <img src={design?.coverImageUrl || template?.previewImage} alt="Romance" className="h-full w-full object-cover" />
         </div>
       </section>
 
-      <button className="w-full py-3.5 rounded-full bg-[#722F37] hover:bg-[#5C232A] text-white font-playfair font-bold text-xs uppercase tracking-widest shadow-xl">
-        Confirmar Asistencia al Claustro
-      </button>
+      {/* 2. CUENTA REGRESIVA ROMÁNTICA */}
+      <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl text-center space-y-4">
+        <EditBadge label="Timer Romántico" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+          CUENTA REGRESIVA PARA EL SÍ
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGUNDOS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 rounded-xl bg-white border border-[#C49A45]/50 text-center">
+              <span className="text-2xl sm:text-3xl font-playfair font-bold text-[#722F37] block leading-none">{t.value}</span>
+              <span className="text-[8px] font-bold text-[#C49A45] uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Boda+de+Julieta+y+Romeo&dates=20261024T173000Z/20261025T040000Z&details=Nuestro+Amor+Eterno&location=Castillo+San+Jeronimo+Zacatecas"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-full bg-[#722F37] hover:bg-[#5C232A] text-white font-playfair text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-colors"
+        >
+          <Calendar className="h-3.5 w-3.5 text-[#C49A45]" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. EL ENCUENTRO DE DOS ALMAS (NUESTRA HISTORIA) */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl text-center space-y-3">
+          <EditBadge label="Historia Romántica" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+            EL ENCUENTRO DE DOS ALMAS
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2A1810]">
+            {sections?.story?.title || 'El Encuentro de Dos Almas'}
+          </h3>
+          <p className="text-xs text-[#722F37] font-playfair italic leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'En un rincón del destino nuestras miradas coincidieron para jamás apartarse. Hoy escribimos el más bello poema de amor.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. ITINERARIO EN EL CLAUSTRO */}
+      <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl space-y-4">
+        <EditBadge label="Itinerario" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+            MOMENTOS SOLEMNES
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2A1810]">Itinerario en el Claustro</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-[#722F37] pl-6 ml-3">
+          {[
+            { time: '17:30 HRS', title: 'Ceremonia en el Claustro', desc: 'Capilla del Amor Eterno' },
+            { time: '19:00 HRS', title: 'Brindis & Música Barroca', desc: 'Patio de los Jazmines' },
+            { time: '20:30 HRS', title: 'Banquete Romántico', desc: 'Gran Salón Renacentista' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-[#722F37]" />
+              <span className="text-xs font-playfair font-bold text-[#722F37] block">{item.time}</span>
+              <h4 className="text-sm font-bold text-[#2A1810]">{item.title}</h4>
+              <p className="text-xs text-[#722F37]/80">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. SEDE DEL CLAUSTRO */}
+      <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl space-y-4 text-center">
+        <EditBadge label="Sede" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+          SEDE ROMÁNTICA
+        </span>
+        <h3 className="text-2xl font-playfair font-bold text-[#2A1810]">{sections?.location?.venueName || 'Castillo San Jerónimo'}</h3>
+        <p className="text-xs text-[#722F37]">{sections?.location?.address || 'Antigua Calzada Real #15, Zacatecas'}</p>
+
+        <div className="h-40 rounded-xl bg-white border border-[#C49A45] flex flex-col items-center justify-center p-4 space-y-1">
+          <Wine className="h-7 w-7 text-[#722F37]" />
+          <p className="text-xs font-playfair font-bold text-[#2A1810]">Castillo San Jerónimo</p>
+          <span className="text-[10px] text-[#722F37]">Claustro y jardines renacentistas</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-full bg-white hover:bg-[#FDF8ED] border border-[#722F37] text-[#2A1810] text-xs font-playfair font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#722F37]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-full bg-white hover:bg-[#FDF8ED] border border-[#722F37] text-[#2A1810] text-xs font-playfair font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#722F37]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA VINTAGE */}
+      <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl space-y-4">
+        <EditBadge label="Galería" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+            MEMORIAS ETERNAS
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2A1810]">Galería Vintage</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 2).map((gImg, idx) => (
+            <div key={idx} className="h-36 rounded-xl border border-[#C49A45] overflow-hidden">
+              <img src={gImg} alt="Romance Gallery" className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl text-center space-y-3">
+          <EditBadge label="Dress Code Romántico" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+            CÓDIGO DE VESTIMENTA
+          </span>
+          <h4 className="text-xl font-playfair font-bold text-[#722F37]">
+            {sections?.dressCode?.type || 'Etiqueta Rigurosa / Vino & Dorado'}
+          </h4>
+          <p className="text-xs text-[#722F37]/90 font-playfair max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Caballeros: Traje oscuro formal o frac. Damas: Vestido largo de noche.'}
+          </p>
+          <div className="flex justify-center gap-2 pt-1">
+            {['#722F37', '#C49A45', '#F7EFE2', '#2A1810'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border border-[#C49A45] shadow-xs" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE REGALOS & CLABE NUPCIAL */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl text-center space-y-4">
+          <EditBadge label="Mesa de Regalos" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+              MESA DE REGALOS & PRESENTES
+            </span>
+            <h4 className="text-2xl font-playfair font-bold text-[#2A1810]">
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & CLABE Nupcial'}
+            </h4>
+            <p className="text-xs text-[#722F37]/80 font-playfair">
+              {sections?.giftRegistry?.description || 'Su bendición y presencia son nuestro mejor obsequio en esta vida.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-white border border-[#C49A45] hover:bg-[#FAF6F0] text-center space-y-1 block transition-colors rounded-xl"
+            >
+              <span className="text-xs font-playfair font-bold text-[#722F37] block">Liverpool Nupcial</span>
+              <span className="text-[10px] text-[#C49A45] font-playfair">Evento: #ROMANCE2026</span>
+            </a>
+            <a
+              href="https://www.elpalaciodehierro.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-white border border-[#C49A45] hover:bg-[#FAF6F0] text-center space-y-1 block transition-colors rounded-xl"
+            >
+              <span className="text-xs font-playfair font-bold text-[#722F37] block">Palacio de Hierro</span>
+              <span className="text-[10px] text-[#C49A45] font-playfair">Boda Capuleto</span>
+            </a>
+          </div>
+
+          <div className="p-4 bg-white border border-[#722F37]/40 rounded-xl text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-[#722F37] font-playfair">Transferencia BBVA Nupcial:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('012180066778899001', 'romance-clasico')}
+                className="text-[10px] font-playfair font-bold text-white bg-[#722F37] hover:bg-[#5C232A] px-3 py-1 rounded-full shadow transition-colors"
+              >
+                {copiedClabeId === 'romance-clasico' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-[#2A1810]">CLABE: 012180066778899001</p>
+            <p className="text-[10px] text-[#722F37] font-playfair">Titular: Julieta Capuleto & Romeo Montesco</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. CONFIRMACIÓN AL CLAUSTRO (RSVP) */}
+      <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl space-y-4">
+        <EditBadge label="RSVP Claustro" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#722F37] block font-playfair">
+            CONFIRMACIÓN DE ASISTENCIA
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2A1810]">Acompañanos en el Claustro</h3>
+        </div>
+
+        {!genericRsvpSubmitted['romance-clasico'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'romance-clasico')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs uppercase font-playfair font-bold tracking-wider text-[#722F37] block mb-1">
+                Nombre de los Invitados:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Nombre completo..."
+                className="w-full px-4 py-3 rounded-xl bg-white border border-[#722F37]/50 text-xs text-[#2A1810] outline-none font-playfair"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase font-playfair font-bold tracking-wider text-[#722F37] block mb-1">
+                Pases Requeridos:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-[#722F37]/50 text-xs text-[#2A1810] outline-none font-playfair"
+              >
+                <option value={1}>1 Pase</option>
+                <option value={2}>2 Pases</option>
+                <option value={3}>3 Pases</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-full bg-[#722F37] hover:bg-[#5C232A] text-white font-playfair font-bold text-xs uppercase tracking-widest shadow-xl transition-transform hover:scale-102"
+            >
+              Confirmar Asistencia al Claustro
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 rounded-xl bg-white border border-[#722F37] text-center space-y-2">
+            <Heart className="h-8 w-8 text-[#722F37] mx-auto fill-[#722F37]" />
+            <h4 className="text-lg font-playfair font-bold text-[#2A1810]">¡Asistencia Registrada!</h4>
+            <p className="text-xs text-[#722F37] font-playfair">
+              Gracias {genericRsvpName}. Será un deleite compartir este romance eterno contigo.
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 9. ELEGANCIA EJECUTIVA
+  // =========================================================================
+  // 9. ELEGANCIA EJECUTIVA (Empresarial & Corporativo) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderEleganciaEjecutiva = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#0F172A]">
-      <div className="text-center space-y-2 pt-2 relative">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#0F172A] selection:bg-[#B45309] selection:text-white">
+      
+      {/* 1. HERO CORPORATIVO */}
+      <section className="text-center space-y-4 pt-2 relative">
         <EditBadge label="Cumbre Corporativa" position="top-right" />
         <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#B45309] block">
           CORPORATE LEADERSHIP SUMMIT
@@ -1793,35 +3488,279 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         <p className="text-xs text-slate-500 font-mono">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
-
-      <section className="relative p-6 rounded-none bg-white border-2 border-[#475569] shadow-lg space-y-4">
-        <EditBadge label="Estructura Ejecutiva" position="top-right" />
-        <div className="relative h-56 w-full rounded-none overflow-hidden border border-slate-300">
+        <div className="relative h-64 sm:h-72 w-full rounded-none overflow-hidden border border-slate-400 shadow-xl mt-4">
           <img src={design?.coverImageUrl || template?.previewImage} alt="Executive" className="h-full w-full object-cover" />
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-2">
-          <div className="p-2 border border-slate-200">
-            <span className="text-[10px] text-[#B45309] block">SEDE</span>
-            <strong>{sections?.location?.venueName}</strong>
-          </div>
-          <div className="p-2 border border-slate-200">
-            <span className="text-[10px] text-[#B45309] block">DRESS CODE</span>
-            <strong>Business Formal</strong>
-          </div>
         </div>
       </section>
 
-      <button className="w-full py-3.5 rounded-none bg-[#0F172A] hover:bg-[#1E293B] text-white font-mono font-bold text-xs uppercase tracking-widest shadow-md">
-        Registrar Credencial Ejecutiva
-      </button>
+      {/* 2. CUENTA REGRESIVA EJECUTIVA */}
+      <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg text-center space-y-4">
+        <EditBadge label="Timer Oficial" position="top-right" />
+        <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+          OFFICIAL SUMMIT COUNTDOWN
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGUNDOS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 bg-slate-50 border border-slate-200 text-center">
+              <span className="text-2xl font-mono font-bold text-[#0F172A] block leading-none">{t.value}</span>
+              <span className="text-[8px] font-mono text-slate-500 uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Cumbre+Ejecutiva+2026&dates=20260917T183000Z/20260917T233000Z&details=Leadership+Summit+and+Anniversary+Gala&location=Torre+Mayor+Executive+Club+CDMX"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 bg-[#0F172A] hover:bg-[#1E293B] text-white font-mono text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
+        >
+          <Calendar className="h-3.5 w-3.5 text-[#B45309]" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. CELEBRANDO EL LIDERAZGO (HISTORIA INSTITUCIONAL) */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg text-center space-y-3">
+          <EditBadge label="Mensaje Institucional" position="top-right" />
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+            VISIÓN & LIDERAZGO
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-[#0F172A]">
+            {sections?.story?.title || 'Celebrando el Liderazgo'}
+          </h3>
+          <p className="text-xs text-slate-600 font-mono leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Un legado construido con excelencia, visión estratégica y la colaboración invaluable de nuestros líderes y aliados.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. PROGRAMA EJECUTIVO */}
+      <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg space-y-4">
+        <EditBadge label="Programa" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+            AGENDA DE TRABAJO
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-[#0F172A]">Programa Ejecutivo</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-[#B45309] pl-6 ml-3">
+          {[
+            { time: '18:30 HRS', title: 'Executive Welcome & Cocktail', desc: 'Atrium Terrace' },
+            { time: '19:45 HRS', title: 'Keynote & Aniversario Speech', desc: 'Main Auditorium' },
+            { time: '21:00 HRS', title: 'Cena de Gala & Networking VIP', desc: 'Executive Lounge' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-none bg-[#B45309]" />
+              <span className="text-xs font-mono font-bold text-[#B45309] block">{item.time}</span>
+              <h4 className="text-sm font-bold text-[#0F172A]">{item.title}</h4>
+              <p className="text-xs text-slate-500 font-mono">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. SEDE CORPORATIVA */}
+      <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg space-y-4 text-center">
+        <EditBadge label="Sede Corporativa" position="top-right" />
+        <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+          SEDE DEL EVENTO
+        </span>
+        <h3 className="text-xl font-cinzel font-bold text-[#0F172A]">{sections?.location?.venueName || 'Torre Mayor Executive Club'}</h3>
+        <p className="text-xs text-slate-500 font-mono">{sections?.location?.address || 'Av. Paseo de la Reforma 505, Piso 51, CDMX'}</p>
+
+        <div className="h-40 bg-slate-50 border border-slate-200 flex flex-col items-center justify-center p-4 space-y-1">
+          <Building className="h-7 w-7 text-[#0F172A]" />
+          <p className="text-xs font-bold text-[#0F172A]">Torre Mayor • Piso 51</p>
+          <span className="text-[10px] text-slate-500">Acreditación requerida en lobby</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#0F172A] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#B45309]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[#0F172A] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#B45309]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA / MEMORIA INSTITUCIONAL */}
+      <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg space-y-4">
+        <EditBadge label="Memoria Institucional" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+            INSTITUCIONAL
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-[#0F172A]">Memoria Gráfica</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 2).map((gImg, idx) => (
+            <div key={idx} className="h-36 rounded-none border border-slate-300 overflow-hidden">
+              <img src={gImg} alt="Corporate Gallery" className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg text-center space-y-3">
+          <EditBadge label="Dress Code Ejecutivo" position="top-right" />
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+            CÓDIGO DE VESTIMENTA
+          </span>
+          <h4 className="text-xl font-cinzel font-bold text-[#0F172A]">
+            {sections?.dressCode?.type || 'Business Formal / Traje Ejecutivo'}
+          </h4>
+          <p className="text-xs text-slate-600 font-mono max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Caballeros: Traje sastre oscuro con corbata. Damas: Traje sastre o vestido ejecutivo.'}
+          </p>
+          <div className="flex justify-center gap-2 pt-1">
+            {['#0F172A', '#475569', '#B45309', '#E2E8F0'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-none border border-slate-400 shadow-xs" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA INSTITUCIONAL & CLABE CORPORATIVA */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg text-center space-y-4">
+          <EditBadge label="Mesa Institucional" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+              FONDO INSTITUCIONAL & RESPONSABILIDAD SOCIAL
+            </span>
+            <h4 className="text-xl font-cinzel font-bold text-[#0F172A]">
+              {sections?.giftRegistry?.title || 'Fondo de Innovación & Obsequios'}
+            </h4>
+            <p className="text-xs text-slate-500 font-mono">
+              {sections?.giftRegistry?.description || 'En lugar de presentes personales, promovemos donaciones a iniciativas de becas.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-slate-50 border border-slate-300 hover:bg-slate-100 text-center space-y-1 block transition-colors rounded-none"
+            >
+              <span className="text-xs font-mono font-bold text-[#0F172A] block">Liverpool Corporativo</span>
+              <span className="text-[10px] text-[#B45309] font-mono">Cuenta: #CORP2026</span>
+            </a>
+            <div className="p-3.5 bg-slate-50 border border-slate-300 text-center space-y-1 block rounded-none">
+              <span className="text-xs font-mono font-bold text-[#0F172A] block">Fondo de Becas</span>
+              <span className="text-[10px] text-[#B45309] font-mono">Donación Deducible</span>
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-300 text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-[#B45309] font-mono">Transferencia HSBC Premier:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('021180033445566778', 'elegancia-ejecutiva')}
+                className="text-[10px] font-mono font-bold text-white bg-[#0F172A] hover:bg-[#1E293B] px-3 py-1 rounded-none shadow transition-colors"
+              >
+                {copiedClabeId === 'elegancia-ejecutiva' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-[#0F172A]">CLABE: 021180033445566778</p>
+            <p className="text-[10px] text-slate-500 font-mono">Titular: Consorcio Empresarial Global S.A. de C.V.</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. REGISTRO DE CREDENCIAL (RSVP) */}
+      <section className="relative p-6 rounded-none bg-white border-2 border-[#0F172A] shadow-xl space-y-4">
+        <EditBadge label="Registro VIP" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#B45309] block">
+            REGISTRO INSTITUCIONAL
+          </span>
+          <h3 className="text-xl font-cinzel font-bold text-[#0F172A]">Acreditación Ejecutiva</h3>
+        </div>
+
+        {!genericRsvpSubmitted['elegancia-ejecutiva'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'elegancia-ejecutiva')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs font-mono font-bold text-[#0F172A] block mb-1">
+                Nombre y Cargo:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Ej. Ing. Roberto Domínguez - Director General"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 text-xs text-[#0F172A] outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-mono font-bold text-[#0F172A] block mb-1">
+                Acompañantes Acreditados:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 text-xs text-[#0F172A] outline-none font-mono"
+              >
+                <option value={1}>1 Acreditación Personal</option>
+                <option value={2}>2 Acreditaciones</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-[#0F172A] hover:bg-[#1E293B] text-white font-mono font-bold text-xs uppercase tracking-widest shadow-md transition-colors"
+            >
+              Registrar Credencial Ejecutiva
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 bg-slate-50 border border-[#0F172A] text-center space-y-2">
+            <CheckCircle2 className="h-8 w-8 text-[#B45309] mx-auto" />
+            <h4 className="text-lg font-cinzel font-bold text-[#0F172A]">Acreditación Confirmada</h4>
+            <p className="text-xs text-slate-600 font-mono">
+              Se ha emitido el pase de seguridad para {genericRsvpName}.
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
-  // 10. TROPICAL SUNSET
+  // =========================================================================
+  // 10. TROPICAL SUNSET (Bodas / Playa / Jardín) - 8 MÓDULOS COMPLETOS
+  // =========================================================================
   const renderTropicalSunset = () => (
-    <div className="max-w-xl mx-auto px-4 py-8 space-y-8 pb-32 relative text-[#2D1B12]">
-      <div className="text-center space-y-2 pt-2 relative">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-12 pb-36 relative text-[#2D1B12] selection:bg-[#C85A32] selection:text-white">
+      
+      {/* 1. HERO FRENTE AL MAR */}
+      <section className="text-center space-y-4 pt-2 relative">
         <EditBadge label="Boda en la Playa" position="top-right" />
         <div className="inline-block p-2 text-[#C85A32]">
           <Palmtree className="h-7 w-7 mx-auto" />
@@ -1832,37 +3771,281 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         <p className="text-xs text-[#E6953B] font-bold uppercase tracking-widest">
           {sections?.hero?.dateText} • {sections?.hero?.timeText}
         </p>
-      </div>
-
-      <section className="relative p-4 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl space-y-4">
-        <EditBadge label="Cabecera Panorámica" position="top-right" />
-        <div className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden shadow-md">
+        <div className="relative h-72 sm:h-80 w-full rounded-3xl overflow-hidden shadow-xl mt-4 border-2 border-[#C85A32]/40">
           <img src={design?.coverImageUrl || template?.previewImage} alt="Tropical" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#C85A32]/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#C85A32]/70 via-transparent to-transparent" />
           <div className="absolute bottom-3 left-3 right-3 text-center text-white text-xs font-semibold">
-            {sections?.location?.venueName} • {sections?.location?.city}
+            {sections?.location?.venueName || 'Hotel Boutique Punta Palmilla'} • Los Cabos
           </div>
         </div>
       </section>
 
-      <section className="relative p-6 rounded-3xl bg-white/90 border border-[#E6953B]/40 shadow-md space-y-3">
-        <EditBadge label="Galería Panorámica Atardecer" position="top-right" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[#C85A32] block">
-          Momentos en el Paraíso
+      {/* 2. CUENTA REGRESIVA PLAYERA */}
+      <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl text-center space-y-4">
+        <EditBadge label="Timer Ocaso" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+          ☀️ CUENTA REGRESIVA EN LA PLAYA ☀️
         </span>
-        <div className="grid grid-cols-3 gap-2">
-          {sections?.gallery?.images?.slice(0, 3).map((gImg, idx) => (
-            <div key={idx} className="h-20 rounded-xl overflow-hidden shadow-xs">
-              <img src={gImg} alt="Beach" className="h-full w-full object-cover" />
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'DÍAS', value: '169' },
+            { label: 'HORAS', value: '06' },
+            { label: 'MINUTOS', value: '45' },
+            { label: 'SEGUNDOS', value: '12' },
+          ].map((t, idx) => (
+            <div key={idx} className="p-3 rounded-2xl bg-[#FDEEE2] border border-[#C85A32]/30 text-center">
+              <span className="text-2xl sm:text-3xl font-playfair font-bold text-[#C85A32] block leading-none">{t.value}</span>
+              <span className="text-[8px] font-bold text-[#E6953B] uppercase block mt-1">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <a
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Boda+de+Lucia+y+Alejandro&dates=20261107T170000Z/20261108T030000Z&details=Nuestra+Boda+Frente+al+Mar&location=Hotel+Boutique+Punta+Palmilla+Los+Cabos"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-full bg-[#C85A32] hover:bg-[#B34D28] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-colors"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>AGREGAR A GOOGLE CALENDAR</span>
+        </a>
+      </section>
+
+      {/* 3. NUESTRO ATARDECER INOLVIDABLE (NUESTRA HISTORIA) */}
+      {sections?.story?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl text-center space-y-3">
+          <EditBadge label="Historia Playera" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+            NUESTRO ATARDECER INOLVIDABLE
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2D1B12]">
+            {sections?.story?.title || 'Nuestro Amor Frente al Mar'}
+          </h3>
+          <p className="text-xs text-slate-600 font-playfair italic leading-relaxed max-w-md mx-auto">
+            «{sections?.story?.content || 'Frente a las olas del Pacífico y bajo los colores dorados del ocaso, celebramos el inicio de nuestra mayor aventura juntos.'}»
+          </p>
+        </section>
+      )}
+
+      {/* 4. ITINERARIO PLAYERO */}
+      <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl space-y-4">
+        <EditBadge label="Itinerario" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+            MOMENTOS BAJO EL SOL
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2D1B12]">Itinerario Playero</h3>
+        </div>
+        <div className="space-y-4 pt-2 border-l-2 border-[#C85A32] pl-6 ml-3">
+          {[
+            { time: '17:00 HRS', title: 'Ceremonia al Atardecer', desc: 'Playa Punta Esmeralda' },
+            { time: '18:30 HRS', title: 'Cóctel Tropical & Música Chill', desc: 'Deck Panorámico de la Playa' },
+            { time: '20:00 HRS', title: 'Cena Bajo las Palmeras', desc: 'Terraza Ocaso' },
+            { time: '22:00 HRS', title: 'Fiesta & Fogata Frente al Mar', desc: 'Pista Arena VIP' },
+          ].map((item, idx) => (
+            <div key={idx} className="relative space-y-0.5">
+              <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-[#C85A32]" />
+              <span className="text-xs font-bold text-[#C85A32] block">{item.time}</span>
+              <h4 className="text-sm font-bold text-[#2D1B12]">{item.title}</h4>
+              <p className="text-xs text-slate-600">{item.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <button className="w-full py-4 rounded-full bg-[#C85A32] hover:bg-[#B34D28] text-white font-bold text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2">
-        <span>Confirmar Asistencia en la Playa</span>
-        <SunMedium className="h-4 w-4 text-amber-200" />
-      </button>
+      {/* 5. SEDE EN LA PLAYA */}
+      <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl space-y-4 text-center">
+        <EditBadge label="Sede Playera" position="top-right" />
+        <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+          LUGAR DEL EVENTO
+        </span>
+        <h3 className="text-2xl font-playfair font-bold text-[#2D1B12]">{sections?.location?.venueName || 'Hotel Boutique Punta Palmilla'}</h3>
+        <p className="text-xs text-slate-600">{sections?.location?.address || 'Km 27.5 Carretera Costera, Los Cabos'}</p>
+
+        <div className="h-40 rounded-2xl bg-[#FDEEE2] border border-[#C85A32]/30 flex flex-col items-center justify-center p-4 space-y-1">
+          <Palmtree className="h-7 w-7 text-[#C85A32]" />
+          <p className="text-xs font-bold text-[#2D1B12]">Hotel Boutique Punta Palmilla</p>
+          <span className="text-[10px] text-slate-600">Recepción en el Deck de Playa</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-full bg-white hover:bg-[#FDEEE2] border border-[#C85A32] text-[#2D1B12] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Navigation className="h-3.5 w-3.5 text-[#C85A32]" />
+            <span>Google Maps</span>
+          </a>
+          <a
+            href="https://waze.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-3 px-4 rounded-full bg-white hover:bg-[#FDEEE2] border border-[#C85A32] text-[#2D1B12] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <Compass className="h-3.5 w-3.5 text-[#C85A32]" />
+            <span>Waze</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. GALERÍA PANORÁMICA */}
+      <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl space-y-4">
+        <EditBadge label="Galería Ocaso" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+            MOMENTOS EN EL PARAÍSO
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2D1B12]">Galería Panorámica</h3>
+        </div>
+        <div className="grid grid-cols-3 gap-2 pt-2">
+          {(sections?.gallery?.images?.length ? sections.gallery.images : [
+            'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'
+          ]).slice(0, 3).map((gImg, idx) => (
+            <div key={idx} className="h-28 rounded-2xl border border-[#C85A32]/40 overflow-hidden shadow-xs">
+              <img src={gImg} alt="Beach Gallery" className="h-full w-full object-cover hover:scale-110 transition-transform duration-500" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. CÓDIGO DE VESTIMENTA (DRESS CODE) */}
+      {sections?.dressCode?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl text-center space-y-3">
+          <EditBadge label="Dress Code Playa" position="top-right" />
+          <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+            CÓDIGO DE VESTIMENTA
+          </span>
+          <h4 className="text-xl font-playfair font-bold text-[#C85A32]">
+            {sections?.dressCode?.type || 'Playa Elegante / Guayabera & Vestido Vaporoso'}
+          </h4>
+          <p className="text-xs text-slate-600 max-w-md mx-auto">
+            {sections?.dressCode?.description || 'Caballeros: Guayabera de lino y pantalón claro. Damas: Vestido vaporoso o midi en tonos cálidos.'}
+          </p>
+          <div className="flex justify-center gap-2 pt-1">
+            {['#C85A32', '#E6953B', '#FDEEE2', '#FFFFFF'].map((c, i) => (
+              <div key={i} className="h-6 w-6 rounded-full border border-[#C85A32]/40 shadow-xs" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. MESA DE REGALOS & CLABE LUNA DE MIEL */}
+      {sections?.giftRegistry?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl text-center space-y-4">
+          <EditBadge label="Mesa Playera" position="top-right" />
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+              MESA DE REGALOS & LUNA DE MIEL
+            </span>
+            <h4 className="text-2xl font-playfair font-bold text-[#2D1B12]">
+              {sections?.giftRegistry?.title || 'Mesa de Regalos & Luna de Miel'}
+            </h4>
+            <p className="text-xs text-slate-600">
+              {sections?.giftRegistry?.description || 'Tu compañía en este atardecer es el mejor regalo para nuestra historia.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <a
+              href="https://mesaderegalos.liverpool.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-[#FDEEE2] border border-[#C85A32]/30 hover:bg-white text-center space-y-1 block transition-colors rounded-2xl"
+            >
+              <span className="text-xs font-bold text-[#2D1B12] block">Liverpool Playa</span>
+              <span className="text-[10px] text-[#C85A32] font-mono">Evento: #PLAYA2026</span>
+            </a>
+            <a
+              href="https://www.amazon.com.mx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3.5 bg-[#FDEEE2] border border-[#C85A32]/30 hover:bg-white text-center space-y-1 block transition-colors rounded-2xl"
+            >
+              <span className="text-xs font-bold text-[#2D1B12] block">Amazon Bodas</span>
+              <span className="text-[10px] text-[#C85A32] font-mono">Wishlist Lucía & Ale</span>
+            </a>
+          </div>
+
+          <div className="p-4 bg-[#FDEEE2] border border-[#C85A32]/40 rounded-2xl text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-[#C85A32]">Transferencia BBVA Luna de Miel:</span>
+              <button
+                type="button"
+                onClick={() => handleCopyAnyClabe('012180044556677889', 'tropical-sunset')}
+                className="text-[10px] font-bold text-white bg-[#C85A32] hover:bg-[#B34D28] px-3 py-1 rounded-full shadow transition-colors"
+              >
+                {copiedClabeId === 'tropical-sunset' ? '✓ ¡CLABE Copiada!' : 'Copiar CLABE'}
+              </button>
+            </div>
+            <p className="text-xs font-mono font-bold text-[#2D1B12]">CLABE: 012180044556677889</p>
+            <p className="text-[10px] text-slate-600">Titular: Lucía Morales & Alejandro Peña</p>
+          </div>
+        </section>
+      )}
+
+      {/* 9. CONFIRMACIÓN EN LA PLAYA (RSVP) */}
+      <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32] shadow-2xl space-y-4">
+        <EditBadge label="RSVP Playa" position="top-right" />
+        <div className="text-center space-y-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-[#C85A32] block">
+            CONFIRMACIÓN DE ASISTENCIA
+          </span>
+          <h3 className="text-2xl font-playfair font-bold text-[#2D1B12]">Confirmación en el Paraíso</h3>
+        </div>
+
+        {!genericRsvpSubmitted['tropical-sunset'] ? (
+          <form onSubmit={(e) => handleGenericRsvpSubmit(e, 'tropical-sunset')} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-[#C85A32] block mb-1">
+                Nombre de los Invitados:
+              </label>
+              <input
+                type="text"
+                required
+                value={genericRsvpName}
+                onChange={(e) => setGenericRsvpName(e.target.value)}
+                placeholder="Nombre completo..."
+                className="w-full px-4 py-3 rounded-xl bg-[#FDEEE2] border border-[#C85A32]/40 text-xs text-[#2D1B12] outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase font-bold tracking-wider text-[#C85A32] block mb-1">
+                Pases Solicitados:
+              </label>
+              <select
+                value={genericRsvpCompanions}
+                onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-[#FDEEE2] border border-[#C85A32]/40 text-xs text-[#2D1B12] outline-none"
+              >
+                <option value={1}>1 Pase</option>
+                <option value={2}>2 Pases</option>
+                <option value={3}>3 Pases</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-full bg-[#C85A32] hover:bg-[#B34D28] text-white font-bold text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2 transition-transform hover:scale-102"
+            >
+              <span>Confirmar Asistencia en la Playa</span>
+              <SunMedium className="h-4 w-4 text-amber-200" />
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 rounded-2xl bg-[#FDEEE2] border border-[#C85A32] text-center space-y-2">
+            <SunMedium className="h-8 w-8 text-[#C85A32] mx-auto animate-spin" style={{ animationDuration: '6s' }} />
+            <h4 className="text-lg font-playfair font-bold text-[#2D1B12]">¡Nos Vemos en la Playa!</h4>
+            <p className="text-xs text-[#C85A32]">
+              Hemos confirmado el lugar para {genericRsvpName} ({genericRsvpCompanions} pases).
+            </p>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 
@@ -2000,23 +4183,34 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         
         {/* VIEWPORT WRAPPER: Mobile Frame or Fullscreen Canvas */}
         <div
-          className={`transition-all duration-300 mx-auto relative ${
+          className={`transition-all duration-300 mx-auto relative flex flex-col ${
             deviceView === 'mobile'
-              ? 'w-full max-w-[440px] rounded-[48px] border-[10px] border-[#0F2424] shadow-2xl overflow-hidden bg-black ring-2 ring-[#D3B48C]/40'
+              ? 'w-full max-w-[440px] rounded-[48px] border-[10px] border-[#0F2424] shadow-2xl overflow-hidden bg-[#F5F2EB] ring-2 ring-[#D3B48C]/40'
               : 'w-full max-w-4xl rounded-3xl border-2 border-[#D3B48C]/40 shadow-2xl overflow-hidden'
           }`}
+          style={{
+            minHeight: deviceView === 'mobile' ? '760px' : 'auto',
+            height: deviceView === 'mobile' ? '820px' : 'auto',
+            maxHeight: deviceView === 'mobile' ? '820px' : 'none',
+          }}
         >
           {/* Dynamic Template Content */}
           <div
             ref={scrollContainerRef}
-            className="w-full relative selection:bg-[#4E8281] selection:text-white"
+            data-scroll-container="true"
+            className="w-full relative selection:bg-[#4E8281] selection:text-white mobile-preview-container flex flex-col"
             style={{
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              overflowY: (template?.id === 'botanical-garden' && !botanicalEnvelopeOpen) ? 'hidden' : 'auto',
+              width: '100%',
+              minHeight: '100%',
+              height: '100%',
+              flex: '1 1 auto',
               backgroundColor: design?.backgroundColor || '#F5F2EB',
               color: design?.textColor || '#3A332C',
               fontFamily: design?.fontFamilyBody || 'Montserrat, sans-serif',
-              minHeight: deviceView === 'mobile' ? '780px' : '900px',
-              maxHeight: deviceView === 'mobile' ? '820px' : 'none',
-              overflowY: (template?.id === 'botanical-garden' && !botanicalEnvelopeOpen) ? 'hidden' : 'auto',
             }}
           >
             {/* Optional Royal Gold Wax Seal Envelope Intro */}
@@ -2037,7 +4231,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
             />
 
             {/* Render Specific Layout for this Template */}
-            <div className="relative z-10">
+            <div className="relative z-10 w-full flex-1 flex flex-col">
               {renderTemplateBody()}
             </div>
 

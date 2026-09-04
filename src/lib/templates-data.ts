@@ -105,9 +105,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'Tu compañía y buenos deseos son nuestro mejor obsequio.',
-          items: [],
+          title: 'Mesa de Regalos & CLABE',
+          description: 'Tu compañía y buenos deseos son nuestro mejor obsequio. Si deseas hacernos un presente:',
+          items: [
+            { title: 'Liverpool Bodas', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'El Palacio de Hierro', type: 'store', url: 'https://www.elpalaciodehierro.com' },
+            { title: 'Transferencia BBVA', type: 'bank', bankName: 'BBVA', clabe: '012180015678901234', accountHolder: 'Elena Vázquez & Mateo Morales' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -230,9 +234,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'El mejor regalo es tu compañía en nuestro gran día.',
-          items: [],
+          title: 'Mesa de Regalos & CLABE',
+          description: 'El mejor regalo es tu compañía en nuestro gran día. Si deseas consentirnos con un detalle:',
+          items: [
+            { title: 'Liverpool Bodas #5092812', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'Amazon Bodas', type: 'store', url: 'https://amazon.com.mx/wedding' },
+            { title: 'Transferencia BBVA', type: 'bank', bankName: 'BBVA', clabe: '012180015678901234', accountHolder: 'Valeria Méndez & Sebastián Ortiz' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -257,8 +265,9 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
     name: '3. Tech-Luxury (Moderna / Exclusiva)',
     category: 'boda',
     badge: 'Glassmorphism & Bokeh Oro',
-    thumbnail: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
-    previewImage: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80',
+    // Tarjeta o invitación con estética oscura, iluminación dorada/neón y diseño vanguardista
+    thumbnail: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=80',
+    previewImage: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80',
     description: 'Fondo oscuro azul medianoche/negro obsidiana con tarjetas de vidrio pulido (glassmorphism), bordes biselados en oro y partículas bokeh flotantes.',
     tags: ['Glassmorphism', 'Fondo Oscuro', 'Bokeh Oro', 'Galería Carrusel', 'Boda de Lujo'],
     isPremium: true,
@@ -348,9 +357,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'Agradecemos tu compañía en esta noche única.',
-          items: [],
+          title: 'Mesa de Regalos & CLABE VIP',
+          description: 'Agradecemos de corazón celebrar con nosotros. Ponemos a tu disposición nuestras opciones de obsequio:',
+          items: [
+            { title: 'El Palacio de Hierro #889210', type: 'store', url: 'https://www.elpalaciodehierro.com' },
+            { title: 'Amazon Luxury Wishlist', type: 'store', url: 'https://amazon.com.mx' },
+            { title: 'Transferencia Banorte VIP', type: 'bank', bankName: 'Banorte', clabe: '072180009876543210', accountHolder: 'Santiago & Camila' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -375,8 +388,9 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
     name: '4. Royal Gold (Clásica / Gran Gala)',
     category: 'boda',
     badge: 'Sobre de Lacre & Anillos',
-    thumbnail: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
-    previewImage: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80',
+    // Detalles de papelería de lujo con grabado en pan de oro, sellos de lacre y tonos marfil
+    thumbnail: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80',
+    previewImage: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80',
     description: 'Marcos ornamentales barrocos en marfil y oro imperial. Animación exclusiva de apertura de sobre con sello de lacre rojo y anillos dorados flotantes.',
     tags: ['Sobre de Lacre', 'Marfil & Oro', 'Gran Gala', '1 Foto Enmarcada', 'Boda de Lujo'],
     isPremium: true,
@@ -460,9 +474,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'El mayor regalo es compartir este día con ustedes.',
-          items: [],
+          title: 'Mesa de Regalos & CLABE de Gala',
+          description: 'El mayor honor es compartir este enlace con ustedes. Para quienes deseen honrarnos con un presente:',
+          items: [
+            { title: 'El Palacio de Hierro Real #410293', type: 'store', url: 'https://www.elpalaciodehierro.com' },
+            { title: 'Lluvia de Sobres de Gala', type: 'envelope', notes: 'Buzón de gala disponible en la recepción' },
+            { title: 'Transferencia Santander Real', type: 'bank', bankName: 'Santander', clabe: '014180005432109876', accountHolder: 'Ana Victoria & Carlos Eduardo' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -576,9 +594,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'Si deseas obsequiarme un detalle:',
-          items: [],
+          title: 'Mesa de Regalos & Sobres Neón',
+          description: '¡Tu presencia hace brillar mi noche! Si deseas hacerme un regalo especial:',
+          items: [
+            { title: 'Liverpool XV #772910', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'Lluvia de Sobres Neón', type: 'envelope', notes: 'Cofre de regalos en la recepción de la fiesta' },
+            { title: 'Transferencia Banamex', type: 'bank', bankName: 'Citibanamex', clabe: '002180076543210987', accountHolder: 'Regina González (Mis XV)' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -688,9 +710,12 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Honor',
-          description: 'Agradecemos compartir este triunfo juntos.',
-          items: [],
+          title: 'Mesa de Honor & Aportaciones',
+          description: 'Agradecemos compartir este triunfo profesional. Opciones de obsequio y fondo pro-graduación:',
+          items: [
+            { title: 'Mesa de Regalos Liverpool', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'Fondo Pro-Graduación BBVA', type: 'bank', bankName: 'BBVA', clabe: '012180098712345678', accountHolder: 'Comité de Graduación 2026' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -715,8 +740,9 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
     name: '7. Sweet Celebration (Infantil / Bautizo)',
     category: 'bautizo',
     badge: 'Nubes Flotantes & Estrellas',
-    thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
-    previewImage: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
+    // Decoración festiva elegante para bautizo/infantil en tonos pasteles y globos suaves
+    thumbnail: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80',
+    previewImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80',
     description: 'Tonos pastel suaves (rosa tierno, azul cielo y amarillo manteca) con ilustraciones delicadas. Nubes flotando suavemente y estrellas titilantes.',
     tags: ['Bautizo', 'Baby Shower', 'Tonos Pastel', '1 Foto Suavizada', 'Boda de Lujo'],
     isPremium: true,
@@ -799,9 +825,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'Agradecemos tu cariño y compañía.',
-          items: [],
+          title: 'Mesa de Regalos & Ahorro Matías',
+          description: 'Agradecemos tu cariño y bendiciones para nuestro pequeño en su bautizo:',
+          items: [
+            { title: 'Liverpool Baby #330192', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'Amazon Baby Wishlist', type: 'store', url: 'https://amazon.com.mx/baby' },
+            { title: 'Cuenta de Ahorro Banorte', type: 'bank', bankName: 'Banorte', clabe: '072180011223344556', accountHolder: 'Fondo de Ahorro Matías' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -826,8 +856,9 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
     name: '8. Romance Clásico (Romeo & Julieta)',
     category: 'boda',
     badge: 'Palomas & Floración Guinda',
-    thumbnail: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=800&q=80',
-    previewImage: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1200&q=80',
+    // Composición clásica de boda con alianzas, flores blancas, encaje y romance puro
+    thumbnail: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80',
+    previewImage: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=80',
     description: 'Textura artesanal tipo pergamino, caligrafía manuscrita y acentos en rojo guinda/vino. Vuelo sutil de dos palomas y floración en las esquinas.',
     tags: ['Romance', 'Pergamino & Vino', 'Vuelo de Palomas', '1 Foto Vintage', 'Boda de Lujo'],
     isPremium: true,
@@ -911,9 +942,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'Tu presencia es el regalo más preciado.',
-          items: [],
+          title: 'Mesa de Regalos & CLABE Nupcial',
+          description: 'Tu presencia en este momento eterno es nuestro mejor regalo. Si deseas otorgarnos un presente:',
+          items: [
+            { title: 'Liverpool Nupcial #660192', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'Buzón de Sobres en Claustro', type: 'envelope', notes: 'Buzón artesanal en el claustro mayor' },
+            { title: 'Transferencia BBVA Nupcial', type: 'bank', bankName: 'BBVA', clabe: '012180066778899001', accountHolder: 'Julieta & Romeo' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -1023,9 +1058,12 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Confirmación Institucional',
-          description: 'Evento privado con registro restringido por credencial.',
-          items: [],
+          title: 'Mesa Institucional & Donación',
+          description: 'En el marco de nuestro 25 aniversario, ponemos a su disposición opciones de aportación filantrópica e institucional:',
+          items: [
+            { title: 'Fondo de Innovación & Becas', type: 'store', url: 'https://fundacion.org' },
+            { title: 'Aportación Institucional HSBC', type: 'bank', bankName: 'HSBC', clabe: '021180033445566778', accountHolder: 'Fideicomiso Cumbre Ejecutiva 2026' },
+          ],
         },
         rsvp: {
           enabled: true,
@@ -1050,8 +1088,9 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
     name: '10. Tropical Sunset (Playa & Jardín)',
     category: 'boda',
     badge: 'Brisa de Palmeras & Sol',
-    thumbnail: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-    previewImage: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    // Ambientación de boda en playa, tonos calidez atardecer y palmas
+    thumbnail: 'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=800&q=80',
+    previewImage: 'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=1200&q=80',
     description: 'Cálidos tonos atardecer, terracota y mostaza con integración panorámica. Sutil movimiento de brisa en palmeras/hojas tropicales y destellos dorados.',
     tags: ['Playa & Jardín', 'Terracota & Ocaso', 'Brisa Tropical', 'Galería Panorámica', 'Boda de Lujo'],
     isPremium: true,
@@ -1142,9 +1181,13 @@ export const TEMPLATES_DATA: TemplateDefinition[] = [
         },
         giftRegistry: {
           enabled: true,
-          title: 'Mesa de Regalos',
-          description: 'Tu compañía en este paraíso es nuestro mejor regalo.',
-          items: [],
+          title: 'Mesa de Regalos & Luna de Miel',
+          description: 'Tu compañía en este paraíso es nuestro mejor regalo. Si gustas apoyarnos para nuestra luna de miel:',
+          items: [
+            { title: 'Liverpool Bodas #990123', type: 'store', url: 'https://mesaderegalos.liverpool.com.mx' },
+            { title: 'Fondo Luna de Miel Amazon', type: 'store', url: 'https://amazon.com.mx' },
+            { title: 'Transferencia Bancomer', type: 'bank', bankName: 'BBVA', clabe: '012180044556677889', accountHolder: 'Lucía Morales & Alejandro Peña' },
+          ],
         },
         rsvp: {
           enabled: true,

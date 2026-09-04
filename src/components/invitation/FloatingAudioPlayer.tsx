@@ -21,10 +21,11 @@ export default function FloatingAudioPlayer({
   const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
-    if (!audioRef.current || !enabled) return;
+    const audioEl = audioRef.current;
+    if (!audioEl || !enabled) return;
 
     if (autoplay) {
-      const playPromise = audioRef.current.play();
+      const playPromise = audioEl.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => setIsPlaying(true))
@@ -34,6 +35,25 @@ export default function FloatingAudioPlayer({
           });
       }
     }
+
+    const stopAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setIsPlaying(false);
+    };
+
+    window.addEventListener('popstate', stopAudio);
+    window.addEventListener('pagehide', stopAudio);
+    window.addEventListener('beforeunload', stopAudio);
+
+    return () => {
+      stopAudio();
+      window.removeEventListener('popstate', stopAudio);
+      window.removeEventListener('pagehide', stopAudio);
+      window.removeEventListener('beforeunload', stopAudio);
+    };
   }, [autoplay, enabled, audioUrl]);
 
   const togglePlay = () => {

@@ -90,6 +90,27 @@ export default function VisualEditorPage() {
     }
   }, [eventId]);
 
+  useEffect(() => {
+    const stopAudio = () => {
+      if (editorAudioRef.current) {
+        editorAudioRef.current.pause();
+        editorAudioRef.current.currentTime = 0;
+      }
+      setPreviewTrackId(null);
+    };
+
+    window.addEventListener('popstate', stopAudio);
+    window.addEventListener('pagehide', stopAudio);
+    window.addEventListener('beforeunload', stopAudio);
+
+    return () => {
+      stopAudio();
+      window.removeEventListener('popstate', stopAudio);
+      window.removeEventListener('pagehide', stopAudio);
+      window.removeEventListener('beforeunload', stopAudio);
+    };
+  }, []);
+
   const handleSave = () => {
     if (!event || !design) return;
     InvitaStore.updateEventDesign(event.id, design);
