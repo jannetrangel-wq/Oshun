@@ -135,7 +135,7 @@ const INITIAL_DEMO_GUESTS: DemoGuest[] = [
   },
 ];
 
-export default function DemoPlaygroundPage() {
+function DemoPlaygroundPage() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as 'guests' | 'seating' | 'whatsapp' | 'checkin' | 'analytics') || 'guests';
 
@@ -789,5 +789,12 @@ export default function DemoPlaygroundPage() {
         actionTitle={restrictedModalAction}
       />
     </div>
+  );
+}
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+      <DemoPlaygroundPage />
+    </Suspense>
   );
 }
