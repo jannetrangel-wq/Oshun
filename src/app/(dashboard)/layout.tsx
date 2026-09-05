@@ -21,12 +21,6 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const user = InvitaStore.getUser();
-    
-    // Si la ruta es /admin, permitimos que admin/page.tsx maneje su propia vista de login maestro
-    if (pathname === '/admin' || pathname.startsWith('/admin')) {
-      setIsAuthorized(true);
-      return;
-    }
 
     if (!user) {
       setIsAuthorized(false);

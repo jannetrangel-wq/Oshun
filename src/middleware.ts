@@ -30,14 +30,6 @@ export function middleware(request: NextRequest) {
   try {
     const user = JSON.parse(decodeURIComponent(sessionCookie));
 
-    // If accessing /admin, require SUPER_ADMIN or ADMIN role
-    if (pathname.startsWith('/admin')) {
-      if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
-        const dashboardUrl = new URL('/dashboard', request.url);
-        return NextResponse.redirect(dashboardUrl);
-      }
-    }
-
     return NextResponse.next();
   } catch {
     // Corrupted cookie: redirect to login

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import OshunLogo from '@/components/ui/OshunLogo';
+import Sidebar from '@/components/ui/Sidebar';
+import Header from '@/components/ui/Header';
 import {
   ShieldAlert,
   Users,
@@ -36,6 +38,7 @@ export default function SuperAdminPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Formulario de login maestro en caso de no tener sesión activa
   const [adminUsername, setAdminUsername] = useState('Administradorgeneral');
@@ -144,7 +147,7 @@ export default function SuperAdminPage() {
   // Vista de Carga Inicial
   if (isCheckingAuth) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+      <div className="min-h-screen bg-[#FAF6F0] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <OshunLogo variant="horizontal" size="md" />
         <p className="text-xs font-bold text-[#4E8281] uppercase tracking-widest font-cinzel animate-pulse">
           Verificando Credenciales de Administrador Maestro...
@@ -156,8 +159,12 @@ export default function SuperAdminPage() {
   // VISTA 1: FORMULARIO DE INICIO DE SESIÓN MAESTRO (Si NO hay sesión activa de Administrador General)
   if (!isMasterSessionActive) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full rounded-3xl bg-white border-2 border-[#D3B48C] p-8 sm:p-10 shadow-2xl space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center p-4 selection:bg-[#4E8281] selection:text-white relative overflow-hidden">
+        {/* Background Decorative Gradient Orbs */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-[#D3B48C]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-[#4E8281]/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-md w-full rounded-3xl bg-white border-2 border-[#D3B48C] p-8 sm:p-10 shadow-2xl space-y-6 relative z-10 animate-in zoom-in-95 duration-300">
           
           {/* Header Card */}
           <div className="text-center space-y-2">
@@ -199,7 +206,7 @@ export default function SuperAdminPage() {
                   value={adminUsername}
                   onChange={(e) => setAdminUsername(e.target.value)}
                   placeholder="Administradorgeneral"
-                  className="w-full rounded-xl bg-[#FAF6F0] border border-[#D3B48C]/60 px-4 py-2.5 text-xs text-[#162E2D] font-medium outline-none focus:ring-2 focus:ring-[#4E8281]"
+                  className="w-full rounded-xl bg-[#FAF6F0] border border-[#D3B48C]/60 px-4 py-2.5 text-xs text-gray-900 font-medium placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-[#4E8281]"
                 />
               </div>
             </div>
@@ -215,7 +222,7 @@ export default function SuperAdminPage() {
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full rounded-xl bg-[#FAF6F0] border border-[#D3B48C]/60 px-4 pr-10 py-2.5 text-xs text-[#162E2D] font-medium outline-none focus:ring-2 focus:ring-[#4E8281]"
+                  className="w-full rounded-xl bg-[#FAF6F0] border border-[#D3B48C]/60 px-4 pr-10 py-2.5 text-xs text-gray-900 font-medium placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-[#4E8281]"
                 />
                 <button
                   type="button"
@@ -251,7 +258,7 @@ export default function SuperAdminPage() {
             <button
               type="button"
               onClick={handleQuickMasterLogin}
-              className="w-full py-2 px-3 rounded-xl bg-[#0F2424] hover:bg-[#1A3838] text-[#D3B48C] text-[11px] font-bold border border-[#D3B48C]/40 flex items-center justify-center gap-2 transition-all shadow-sm"
+              className="w-full py-2.5 px-3 rounded-xl bg-[#0F2424] hover:bg-[#1A3838] text-[#D3B48C] text-[11px] font-bold border border-[#D3B48C]/40 flex items-center justify-center gap-2 transition-all shadow-sm"
             >
               <span>⚡ Ingresar como Administradorgeneral</span>
             </button>
@@ -279,114 +286,122 @@ export default function SuperAdminPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Header del Panel Maestro */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#D3B48C]/50 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#D3B48C] bg-[#0F2424] px-2.5 py-0.5 rounded-full font-cinzel">
-              PANEL GLOBAL SUPER ADMIN • OSHUN
-            </span>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              <span>En Línea</span>
-            </span>
+    <div className="flex min-h-screen bg-[#FAF6F0] text-[#162E2D]">
+      {/* Sidebar de navegación */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Área Principal de Contenido */}
+      <div className="flex flex-1 flex-col overflow-x-hidden">
+        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-8 animate-in fade-in duration-300">
+          {/* Header del Panel Maestro */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#D3B48C]/50 shadow-sm">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#D3B48C] bg-[#0F2424] px-2.5 py-0.5 rounded-full font-cinzel">
+                  PANEL GLOBAL SUPER ADMIN • OSHUN
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span>En Línea</span>
+                </span>
+              </div>
+              <h2
+                className="text-xl sm:text-2xl font-bold text-[#162E2D]"
+                style={{ fontFamily: 'Cinzel, serif' }}
+              >
+                Supervisión General & Gestión de Base de Datos
+              </h2>
+              <p className="text-xs text-[#778F8C]">
+                Supervisión total de eventos creados, usuarios registrados, claves automáticas y modulación de planes.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleManualRefresh}
+                className="px-3.5 py-2 rounded-full bg-white hover:bg-[#FAF6F0] text-[#162E2D] border border-[#D3B48C] text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
+                title="Recargar eventos y usuarios"
+              >
+                <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
+                <span>Actualizar</span>
+              </button>
+
+              <Link
+                href="/events/new"
+                className="btn-oshun-primary text-xs px-4 py-2 rounded-full inline-flex items-center gap-1.5 shadow-md"
+              >
+                <PlusCircle className="h-4 w-4 text-[#D3B48C]" />
+                <span>+ Crear Evento</span>
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="px-3.5 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all"
+                title="Cerrar sesión de Administrador General"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
           </div>
-          <h2
-            className="text-xl sm:text-2xl font-bold text-[#162E2D]"
-            style={{ fontFamily: 'Cinzel, serif' }}
-          >
-            Supervisión General & Gestión de Base de Datos
-          </h2>
-          <p className="text-xs text-[#778F8C]">
-            Supervisión total de eventos creados, usuarios registrados, claves automáticas y modulación de planes.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleManualRefresh}
-            className="px-3.5 py-2 rounded-full bg-white hover:bg-[#FAF6F0] text-[#162E2D] border border-[#D3B48C] text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
-            title="Recargar eventos y usuarios"
-          >
-            <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
-            <span>Actualizar</span>
-          </button>
-
-          <Link
-            href="/events/new"
-            className="btn-oshun-primary text-xs px-4 py-2 rounded-full inline-flex items-center gap-1.5 shadow-md"
-          >
-            <PlusCircle className="h-4 w-4 text-[#D3B48C]" />
-            <span>+ Crear Evento</span>
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="px-3.5 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all"
-            title="Cerrar sesión de Administrador General"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Tarjetas de Métricas Globales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {PLATFORM_STATS.map((stat, idx) => (
-          <div key={idx} className="p-5 rounded-3xl bg-white border border-[#D3B48C]/40 shadow-sm space-y-2 hover:border-[#4E8281] transition-all">
-            <span className="text-xs font-semibold text-[#778F8C] block">{stat.label}</span>
-            <span
-              className="text-xl font-bold text-[#4E8281] block truncate"
-              style={{ fontFamily: 'Cinzel, serif' }}
-            >
-              {stat.value}
-            </span>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-              {stat.change}
-            </span>
+          {/* Tarjetas de Métricas Globales */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {PLATFORM_STATS.map((stat, idx) => (
+              <div key={idx} className="p-5 rounded-3xl bg-white border border-[#D3B48C]/40 shadow-sm space-y-2 hover:border-[#4E8281] transition-all">
+                <span className="text-xs font-semibold text-[#778F8C] block">{stat.label}</span>
+                <span
+                  className="text-xl font-bold text-[#4E8281] block truncate"
+                  style={{ fontFamily: 'Cinzel, serif' }}
+                >
+                  {stat.value}
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
+                  {stat.change}
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Directorio de Usuarios, Credenciales & Modulación de Planes */}
-      <div className="rounded-3xl bg-white border border-[#D3B48C]/40 p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div>
-            <h3
-              className="text-base font-bold text-[#162E2D]"
-              style={{ fontFamily: 'Cinzel, serif' }}
-            >
-              Directorio de Usuarios, Credenciales & Planes Activos ({users.length})
-            </h3>
-            <p className="text-xs text-[#778F8C]">
-              Credenciales generadas automáticamente para cada cliente al crear su evento. Puedes ajustar su plan con 1 clic.
-            </p>
-          </div>
-          <span className="text-xs font-bold text-[#4E8281] bg-[#4E8281]/10 px-3 py-1 rounded-full">
-            Total: {users.length} Cuentas
-          </span>
-        </div>
+          {/* Directorio de Usuarios, Credenciales & Modulación de Planes */}
+          <div className="rounded-3xl bg-white border border-[#D3B48C]/40 p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div>
+                <h3
+                  className="text-base font-bold text-[#162E2D]"
+                  style={{ fontFamily: 'Cinzel, serif' }}
+                >
+                  Directorio de Usuarios, Credenciales & Planes Activos ({users.length})
+                </h3>
+                <p className="text-xs text-[#778F8C]">
+                  Credenciales generadas automáticamente para cada cliente al crear su evento. Puedes ajustar su plan con 1 clic.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-[#4E8281] bg-[#4E8281]/10 px-3 py-1 rounded-full">
+                Total: {users.length} Cuentas
+              </span>
+            </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF6F0] border-b border-[#D3B48C]/30 text-[#778F8C] uppercase font-bold text-[10px]">
-              <tr>
-                <th className="py-3 px-4">Usuario / Cuenta</th>
-                <th className="py-3 px-3">Contraseña de Acceso</th>
-                <th className="py-3 px-3">Plan Activo (Modulable)</th>
-                <th className="py-3 px-3">Evento Asignado</th>
-                <th className="py-3 px-3">Rol</th>
-                <th className="py-3 px-4 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#D3B48C]/20">
-              {users.map((u) => {
-                const assignedEvent = events.find((e) => e.id === u.eventId || e.userId === u.id);
-                const isSuperAdmin = u.role === 'SUPER_ADMIN' || u.username?.toLowerCase() === 'administradorgeneral';
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#FAF6F0] border-b border-[#D3B48C]/30 text-[#778F8C] uppercase font-bold text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">Usuario / Cuenta</th>
+                    <th className="py-3 px-3">Contraseña de Acceso</th>
+                    <th className="py-3 px-3">Plan Activo (Modulable)</th>
+                    <th className="py-3 px-3">Evento Asignado</th>
+                    <th className="py-3 px-3">Rol</th>
+                    <th className="py-3 px-4 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#D3B48C]/20">
+                  {users.map((u) => {
+                    const assignedEvent = events.find((e) => e.id === u.eventId || e.userId === u.id);
+                    const isSuperAdmin = u.role === 'SUPER_ADMIN' || u.username?.toLowerCase() === 'administradorgeneral';
 
-                return (
+                    return (
                   <tr key={u.id} className="hover:bg-[#FAF6F0]/60 transition-colors">
                     <td className="py-3.5 px-4 font-bold text-[#162E2D]">
                       <div className="flex items-center gap-2">
@@ -535,6 +550,8 @@ export default function SuperAdminPage() {
           ))}
         </div>
       </div>
-    </div>
+    </main>
+  </div>
+</div>
   );
 }
