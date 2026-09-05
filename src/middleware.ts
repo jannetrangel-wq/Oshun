@@ -7,7 +7,6 @@ export function middleware(request: NextRequest) {
   // Protected paths that require active session
   const isProtectedPath =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/admin') ||
     pathname.startsWith('/events') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/seating') ||
@@ -51,7 +50,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/admin/:path*',
     '/events/:path*',
     '/settings/:path*',
     '/seating/:path*',

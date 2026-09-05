@@ -21,15 +21,16 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const user = InvitaStore.getUser();
-    if (!user) {
-      setIsAuthorized(false);
-      router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+    
+    // Si la ruta es /admin, permitimos que admin/page.tsx maneje su propia vista de login maestro
+    if (pathname === '/admin' || pathname.startsWith('/admin')) {
+      setIsAuthorized(true);
       return;
     }
 
-    if (pathname.startsWith('/admin') && user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
+    if (!user) {
       setIsAuthorized(false);
-      router.push('/dashboard');
+      router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
       return;
     }
 
