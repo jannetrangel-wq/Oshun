@@ -27,7 +27,7 @@ import { User, Event, PlanTier, PLAN_CONFIG } from '@/types';
 export default function SuperAdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadAdminData = () => {
     setUsers(InvitaStore.getUsers());
@@ -36,7 +36,29 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     loadAdminData();
+
+    const handleSync = () => {
+      loadAdminData();
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('oshun_events_updated', handleSync);
+    window.addEventListener('oshun_users_updated', handleSync);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('oshun_events_updated', handleSync);
+      window.removeEventListener('oshun_users_updated', handleSync);
+    };
   }, []);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    loadAdminData();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   const handlePlanChange = (userId: string, newPlan: PlanTier) => {
     InvitaStore.updateUserPlan(userId, newPlan);
@@ -71,9 +93,20 @@ export default function SuperAdminPage() {
           </p>
         </div>
 
-        <div className="px-3.5 py-1.5 rounded-full bg-[#0F2424] text-white text-xs font-bold flex items-center gap-2 border border-[#D3B48C]/40">
-          <ShieldAlert className="h-4 w-4 text-[#D3B48C]" />
-          <span>Super Usuario Maestro Activo</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleManualRefresh}
+            className="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF6F0] text-[#162E2D] border border-[#D3B48C]/50 text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
+            title="Recargar eventos y usuarios en tiempo real"
+          >
+            <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
+            <span>Actualizar</span>
+          </button>
+
+          <div className="px-3.5 py-1.5 rounded-full bg-[#0F2424] text-white text-xs font-bold flex items-center gap-2 border border-[#D3B48C]/40 shadow-xs">
+            <ShieldAlert className="h-4 w-4 text-[#D3B48C]" />
+            <span>Super Usuario Maestro</span>
+          </div>
         </div>
       </div>
 

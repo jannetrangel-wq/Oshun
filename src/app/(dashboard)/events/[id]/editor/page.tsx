@@ -913,6 +913,7 @@ export default function VisualEditorPage() {
                 { key: 'gallery', label: 'Galería de Fotos' },
                 { key: 'dressCode', label: 'Código de Vestimenta' },
                 { key: 'giftRegistry', label: 'Mesa de Regalos & CLABE' },
+                { key: 'seating', label: 'Acomodo de Mesas & Consulta' },
                 { key: 'rsvp', label: 'Formulario RSVP' },
               ].map((sec) => (
                 <div

@@ -34,6 +34,8 @@ import confetti from 'canvas-confetti';
 import BackgroundEffects from '@/components/invitation/BackgroundEffects';
 import EnvelopeIntro from '@/components/invitation/EnvelopeIntro';
 import FloatingAudioPlayer from '@/components/invitation/FloatingAudioPlayer';
+import SeatingLookupSection from '@/components/invitation/SeatingLookupSection';
+import { buildRsvpNotificationUrl } from '@/lib/whatsapp';
 
 export default function PublicInvitationPage() {
   const params = useParams();
@@ -118,16 +120,18 @@ export default function PublicInvitationPage() {
       allowedCompanions: rsvpCompanionsCount,
       confirmedCompanions: rsvpAttending === 'YES' ? rsvpCompanionsCount : 0,
       companionNames: [],
-      dietaryRestrictions: rsvpDietary,
-      notes: rsvpNotes,
+      dietaryRestrictions: rsvpDietary || 'Ninguna',
+      notes: rsvpNotes || '',
       checkedIn: false,
     };
 
     InvitaStore.addGuest(event.id, newGuest);
     setConfirmedGuestCode(guestCode);
 
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://oshun.com';
+
     if (rsvpAttending === 'YES') {
-      const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://oshun.com'}/i/${event.slug}/${guestCode}`;
+      const url = `${baseUrl}/i/${event.slug}/${guestCode}`;
       const qr = await generateQrDataUrl(url, { darkColor: '#0F2424', lightColor: '#FFFFFF', width: 220 });
       setQrDataUrl(qr);
 
@@ -141,6 +145,21 @@ export default function PublicInvitationPage() {
         });
       }
     }
+
+    // Auto-open WhatsApp with the confirmation payload
+    const waUrl = buildRsvpNotificationUrl({
+      event,
+      guestName: rsvpName.trim(),
+      guestPhone: rsvpPhone.trim(),
+      attending: rsvpAttending,
+      companionsCount: rsvpCompanionsCount,
+      guestCode,
+      dietary: rsvpDietary,
+      notes: rsvpNotes,
+    });
+    try {
+      window.open(waUrl, '_blank');
+    } catch {}
 
     setRsvpSuccess(true);
   };
@@ -453,6 +472,31 @@ export default function PublicInvitationPage() {
           </section>
         )}
 
+        {/* SEATING LOOKUP SECTION */}
+        {design.sections.seating?.enabled !== false && (
+          <section
+            className="p-6 rounded-3xl shadow-xl text-center space-y-4 border"
+            style={{
+              backgroundColor: design.cardBackground || 'rgba(250, 246, 240, 0.95)',
+              borderColor: `${design.accentColor || '#D3B48C'}60`,
+            }}
+          >
+            <SeatingLookupSection
+              eventId={event?.id}
+              templateId={event?.design?.templateId || 'minimal-nude'}
+              title={design.sections.seating?.title}
+              subtitle={design.sections.seating?.subtitle}
+              description={design.sections.seating?.description}
+              primaryColor={design.primaryColor || '#4E8281'}
+              accentColor={design.accentColor || '#D3B48C'}
+              cardBackground={design.cardBackground || 'rgba(250, 246, 240, 0.95)'}
+              textColor={design.textColor || '#162E2D'}
+              fontFamilyTitle={design.fontFamilyTitle || 'Cinzel'}
+              fontFamilyBody={design.fontFamilyBody || 'Montserrat'}
+            />
+          </section>
+        )}
+
         {/* RSVP ACTION BUTTON */}
         <section className="p-8 rounded-3xl bg-[#0F2424] text-white border-2 border-[#D3B48C] shadow-2xl text-center space-y-4">
           <h3 className="text-xl font-bold tracking-wider text-[#D3B48C] font-cinzel">Confirmación de Asistencia</h3>
@@ -489,35 +533,35 @@ export default function PublicInvitationPage() {
         {!rsvpSuccess ? (
           <form onSubmit={handleRsvpSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#162E2D] mb-1">Nombre Completo *</label>
+              <label className="block text-xs font-bold text-gray-900 mb-1">Nombre Completo *</label>
               <input
                 type="text"
                 required
                 value={rsvpName}
                 onChange={(e) => setRsvpName(e.target.value)}
                 placeholder="Ej. Roberto Garza Sada"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#D3B48C]/50 bg-[#FAF6F0] focus:ring-2 focus:ring-[#4E8281] outline-none"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 bg-white text-gray-900 font-medium placeholder:text-gray-500 focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#162E2D] mb-1">Teléfono WhatsApp *</label>
+              <label className="block text-xs font-bold text-gray-900 mb-1">Teléfono WhatsApp *</label>
               <input
                 type="tel"
                 required
                 value={rsvpPhone}
                 onChange={(e) => setRsvpPhone(e.target.value)}
                 placeholder="+52 81 1234 5678"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#D3B48C]/50 bg-[#FAF6F0] focus:ring-2 focus:ring-[#4E8281] outline-none"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 bg-white text-gray-900 font-medium placeholder:text-gray-500 focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#162E2D] mb-1">¿Asistirás al evento? *</label>
+              <label className="block text-xs font-bold text-gray-900 mb-1">¿Asistirás al evento? *</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setRsvpAttending('YES')}
                   className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                    rsvpAttending === 'YES' ? 'bg-[#4E8281] text-white border-[#4E8281]' : 'bg-[#FAF6F0] text-[#778F8C] border-[#D3B48C]/40'
+                    rsvpAttending === 'YES' ? 'bg-[#4E8281] text-white border-[#4E8281]' : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
                   }`}
                 >
                   ✓ Sí, asistiré con gusto
@@ -526,7 +570,7 @@ export default function PublicInvitationPage() {
                   type="button"
                   onClick={() => setRsvpAttending('NO')}
                   className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                    rsvpAttending === 'NO' ? 'bg-rose-600 text-white border-rose-600' : 'bg-[#FAF6F0] text-[#778F8C] border-[#D3B48C]/40'
+                    rsvpAttending === 'NO' ? 'bg-rose-600 text-white border-rose-600' : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
                   }`}
                 >
                   ✕ No podré asistir
@@ -534,26 +578,49 @@ export default function PublicInvitationPage() {
               </div>
             </div>
             {rsvpAttending === 'YES' && (
-              <div>
-                <label className="block text-xs font-bold text-[#162E2D] mb-1">Total de Personas (Incluyéndote)</label>
-                <select
-                  value={rsvpCompanionsCount}
-                  onChange={(e) => setRsvpCompanionsCount(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#D3B48C]/50 bg-[#FAF6F0] outline-none"
-                >
-                  <option value={1}>1 Pase (Solo yo)</option>
-                  <option value={2}>2 Pases (Con acompañante)</option>
-                  <option value={3}>3 Pases</option>
-                  <option value={4}>4 Pases (Familia)</option>
-                </select>
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 mb-1">Total de Personas (Incluyéndote)</label>
+                  <select
+                    value={rsvpCompanionsCount}
+                    onChange={(e) => setRsvpCompanionsCount(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 bg-white text-gray-900 font-medium focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs"
+                  >
+                    <option value={1}>1 Pase (Solo yo)</option>
+                    <option value={2}>2 Pases (Con acompañante)</option>
+                    <option value={3}>3 Pases</option>
+                    <option value={4}>4 Pases (Familia)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 mb-1">Restricciones Alimentarias / Alergias (Opcional)</label>
+                  <input
+                    type="text"
+                    value={rsvpDietary}
+                    onChange={(e) => setRsvpDietary(e.target.value)}
+                    placeholder="Ej. Vegetariano, sin gluten, alergia a mariscos..."
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 bg-white text-gray-900 font-medium placeholder:text-gray-500 focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-900 mb-1">Mensaje para los Anfitriones (Opcional)</label>
+                  <textarea
+                    rows={2}
+                    value={rsvpNotes}
+                    onChange={(e) => setRsvpNotes(e.target.value)}
+                    placeholder="Escribe tus buenos deseos..."
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-gray-300 bg-white text-gray-900 font-medium placeholder:text-gray-500 focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs resize-none"
+                  />
+                </div>
+              </>
             )}
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3 rounded-full bg-[#4E8281] hover:bg-[#3E6D6C] text-white font-bold text-xs uppercase tracking-wider shadow-lg"
+                className="w-full py-3.5 rounded-full bg-[#4E8281] hover:bg-[#3E6D6C] text-white font-bold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
               >
-                Enviar Confirmación
+                <span>Enviar Confirmación & Notificar por WhatsApp</span>
+                <span>📲</span>
               </button>
             </div>
           </form>
@@ -562,10 +629,10 @@ export default function PublicInvitationPage() {
             <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
               <Check className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-bold text-[#162E2D] font-cinzel">
+            <h3 className="text-base font-bold text-gray-900 font-cinzel">
               {rsvpAttending === 'YES' ? '¡Asistencia Confirmada!' : 'Gracias por avisarnos'}
             </h3>
-            <p className="text-xs text-[#778F8C]">
+            <p className="text-xs text-gray-600">
               {rsvpAttending === 'YES'
                 ? `Hemos registrado tu confirmación con ${rsvpCompanionsCount} pases. Tu código de acceso es #${confirmedGuestCode}.`
                 : 'Lamentamos que no puedas acompañarnos, gracias por informarnos.'}
@@ -576,15 +643,36 @@ export default function PublicInvitationPage() {
                 <span className="text-[10px] font-mono font-bold text-[#4E8281] block mt-1">Pase #{confirmedGuestCode}</span>
               </div>
             )}
-            <button
-              onClick={() => {
-                setIsRsvpOpen(false);
-                setRsvpSuccess(false);
-              }}
-              className="w-full py-2.5 rounded-full bg-[#EFE3D4] text-[#162E2D] text-xs font-bold"
-            >
-              Cerrar
-            </button>
+            <div className="space-y-2 pt-2">
+              <a
+                href={buildRsvpNotificationUrl({
+                  event,
+                  guestName: rsvpName.trim(),
+                  guestPhone: rsvpPhone.trim(),
+                  attending: rsvpAttending,
+                  companionsCount: rsvpCompanionsCount,
+                  guestCode: confirmedGuestCode || undefined,
+                  dietary: rsvpDietary,
+                  notes: rsvpNotes,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md"
+              >
+                <span>Reabrir Mensaje en WhatsApp</span>
+                <span>📲</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  setIsRsvpOpen(false);
+                  setRsvpSuccess(false);
+                }}
+                className="w-full py-2.5 rounded-full bg-[#FAF6F0] border border-[#D3B48C]/40 text-[#162E2D] text-xs font-bold hover:bg-[#EFE3D4]"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         )}
       </Modal>

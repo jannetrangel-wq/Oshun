@@ -97,6 +97,18 @@ export type EventCategory =
   | 'privado'
   | 'otro';
 
+export type GuestProfile =
+  | 'VIP'
+  | 'FAMILIA'
+  | 'AMIGO'
+  | 'PAREJA'
+  | 'EMPRESA'
+  | 'PROVEEDOR'
+  | 'PRENSA'
+  | 'STAFF'
+  | 'INVITADO ESPECIAL'
+  | 'REGULAR';
+
 export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export type GuestGroup =
@@ -141,6 +153,7 @@ export interface Guest {
   name: string;
   phone: string;
   email?: string;
+  profile?: GuestProfile;
   group: GuestGroup;
   status: GuestStatus;
   allowedCompanions: number;
@@ -148,6 +161,9 @@ export interface Guest {
   companionNames: string[];
   dietaryRestrictions?: string;
   tableNumber?: string;
+  tableId?: string;
+  seatIds?: string[];
+  zone?: string;
   checkedIn: boolean;
   checkedInAt?: string;
   checkedInBy?: string;
@@ -253,6 +269,16 @@ export interface EventSectionQrPass {
   instructions: string;
 }
 
+export interface EventSectionSeating {
+  enabled: boolean;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  allowGuestLookup?: boolean;
+  showTableMap?: boolean;
+  showZones?: boolean;
+}
+
 export type AnimationType =
   | 'none'
   | 'fade'
@@ -317,6 +343,7 @@ export interface EventDesign {
     giftRegistry: EventSectionGiftRegistry;
     rsvp: EventSectionRsvp;
     qrPass: EventSectionQrPass;
+    seating?: EventSectionSeating;
   };
 }
 

@@ -57,6 +57,7 @@ import { Event, Guest, SeatingTable, TableShape, EventCategory } from '@/types';
 import Modal from '@/components/ui/Modal';
 import confetti from 'canvas-confetti';
 import FeatureGuard from '@/components/auth/FeatureGuard';
+import SmartSeatingModal from '@/components/seating/SmartSeatingModal';
 
 interface LandmarkPosition {
   id: string;
@@ -229,6 +230,9 @@ export default function SeatingPlanPage() {
   // Modal: Vista Hostess / Recepción en Puerta
   const [isHostessModalOpen, setIsHostessModalOpen] = useState(false);
   const [hostessSearch, setHostessSearch] = useState('');
+
+  // Modal: Acomodo Inteligente (Smart Seating AI)
+  const [isSmartSeatingOpen, setIsSmartSeatingOpen] = useState(false);
 
   // Toast Notification
   const [notification, setNotification] = useState<string | null>(null);
@@ -827,6 +831,15 @@ export default function SeatingPlanPage() {
           >
             <Users className="h-3.5 w-3.5 text-[#4E8281]" />
             <span>Hostess</span>
+          </button>
+
+          <button
+            onClick={() => setIsSmartSeatingOpen(true)}
+            className="px-3.5 py-2 rounded-full bg-[#0F2424] hover:bg-[#162E2D] text-[#D3B48C] text-xs font-bold flex items-center gap-1.5 border border-[#D3B48C] shadow-md transition-all hover:scale-105"
+            title="Distribución inteligente de invitados con optimización de afinidad y zonas"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-[#D3B48C] animate-pulse" />
+            <span>🪄 Acomodo Inteligente (IA)</span>
           </button>
 
           <button
@@ -2364,6 +2377,20 @@ export default function SeatingPlanPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal: Acomodo Inteligente IA (Smart Seating) */}
+      <SmartSeatingModal
+        isOpen={isSmartSeatingOpen}
+        onClose={() => {
+          setIsSmartSeatingOpen(false);
+          loadData();
+        }}
+        eventId={event?.id || eventId}
+        onApplied={() => {
+          loadData();
+          showNotification('¡Acomodo inteligente aplicado con éxito!');
+        }}
+      />
       </FeatureGuard>
 
     </div>

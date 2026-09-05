@@ -29,6 +29,7 @@ import { InvitaStore } from '@/lib/store';
 import { Event, Guest } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { generateQrDataUrl } from '@/lib/qr';
+import { buildRsvpNotificationUrl } from '@/lib/whatsapp';
 import Modal from '@/components/ui/Modal';
 
 export default function PersonalizedGuestInvitationPage() {
@@ -133,6 +134,21 @@ export default function PersonalizedGuestInvitationPage() {
         colors: ['#4E8281', '#D3B48C', '#97B8B3', '#F4EDE2'],
       });
     }
+
+    // Auto-open WhatsApp with the confirmation payload
+    const waUrl = buildRsvpNotificationUrl({
+      event,
+      guestName: guest.name,
+      guestPhone: guest.phone,
+      attending: rsvpAttending,
+      companionsCount: rsvpAttending === 'YES' ? rsvpCompanionsCount : 0,
+      guestCode: guest.code,
+      dietary: rsvpDietary,
+      notes: rsvpNotes,
+    });
+    try {
+      window.open(waUrl, '_blank');
+    } catch {}
 
     setRsvpSuccess(true);
   };
@@ -441,25 +457,47 @@ export default function PersonalizedGuestInvitationPage() {
             >
               ¡Gracias, {guest.name}!
             </h4>
-            <p className="text-xs text-[#778F8C]">
+            <p className="text-xs text-gray-600">
               {guest.status === 'CONFIRMED'
                 ? `Tu asistencia ha quedado registrada con ${guest.confirmedCompanions} pases.`
                 : 'Lamentamos que no puedas asistir. ¡Gracias por avisarnos!'}
             </p>
-            <button
-              onClick={() => {
-                setIsRsvpOpen(false);
-                setRsvpSuccess(false);
-              }}
-              className="w-full py-2.5 rounded-full bg-[#EFE3D4] text-xs font-bold text-[#162E2D]"
-            >
-              Cerrar
-            </button>
+
+            <div className="space-y-2 pt-2">
+              <a
+                href={buildRsvpNotificationUrl({
+                  event,
+                  guestName: guest.name,
+                  guestPhone: guest.phone,
+                  attending: rsvpAttending,
+                  companionsCount: rsvpAttending === 'YES' ? rsvpCompanionsCount : 0,
+                  guestCode: guest.code,
+                  dietary: rsvpDietary,
+                  notes: rsvpNotes,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md"
+              >
+                <span>Reabrir Mensaje en WhatsApp</span>
+                <span>📲</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  setIsRsvpOpen(false);
+                  setRsvpSuccess(false);
+                }}
+                className="w-full py-2.5 rounded-full bg-[#FAF6F0] border border-[#D3B48C]/40 text-xs font-bold text-[#162E2D] hover:bg-[#EFE3D4]"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleRsvpSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block font-bold text-[#162E2D] mb-1.5">¿Asistirás al Evento?</label>
+              <label className="block font-bold text-gray-900 mb-1.5">¿Asistirás al Evento?</label>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
@@ -467,7 +505,7 @@ export default function PersonalizedGuestInvitationPage() {
                   className={`py-2 rounded-full font-bold border flex items-center justify-center gap-1.5 ${
                     rsvpAttending === 'YES'
                       ? 'bg-[#4E8281] text-white border-[#4E8281]'
-                      : 'bg-white text-[#778F8C] border-[#D3B48C]/40'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -479,7 +517,7 @@ export default function PersonalizedGuestInvitationPage() {
                   className={`py-2 rounded-full font-bold border flex items-center justify-center gap-1.5 ${
                     rsvpAttending === 'NO'
                       ? 'bg-rose-600 text-white border-rose-600'
-                      : 'bg-white text-[#778F8C] border-[#D3B48C]/40'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <XCircle className="h-3.5 w-3.5" />
@@ -491,13 +529,13 @@ export default function PersonalizedGuestInvitationPage() {
             {rsvpAttending === 'YES' && (
               <>
                 <div>
-                  <label className="block font-bold text-[#162E2D] mb-1">
+                  <label className="block font-bold text-gray-900 mb-1">
                     Pases a Confirmar (Máx: {guest.allowedCompanions})
                   </label>
                   <select
                     value={rsvpCompanionsCount}
                     onChange={(e) => setRsvpCompanionsCount(parseInt(e.target.value, 10))}
-                    className="w-full rounded-xl bg-white border border-[#D3B48C]/40 px-3 py-2 text-xs text-[#162E2D] focus:border-[#4E8281] focus:outline-none"
+                    className="w-full rounded-xl bg-white border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs"
                   >
                     {Array.from({ length: guest.allowedCompanions }).map((_, i) => (
                       <option key={i + 1} value={i + 1}>
@@ -508,30 +546,30 @@ export default function PersonalizedGuestInvitationPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#162E2D] mb-1">Restricciones Dietéticas</label>
+                  <label className="block font-bold text-gray-900 mb-1">Restricciones Dietéticas</label>
                   <input
                     type="text"
                     value={rsvpDietary}
                     onChange={(e) => setRsvpDietary(e.target.value)}
                     placeholder="Vegetariano, Sin gluten, Ninguna..."
-                    className="w-full rounded-xl bg-white border border-[#D3B48C]/40 px-3 py-2 text-xs text-[#162E2D] focus:border-[#4E8281] focus:outline-none"
+                    className="w-full rounded-xl bg-white border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 font-medium placeholder:text-gray-500 focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <label className="block font-bold text-[#162E2D] mb-1">Mensaje para los Anfitriones</label>
+              <label className="block font-bold text-gray-900 mb-1">Mensaje para los Anfitriones</label>
               <textarea
                 rows={2}
                 value={rsvpNotes}
                 onChange={(e) => setRsvpNotes(e.target.value)}
                 placeholder="Un mensaje especial..."
-                className="w-full rounded-xl bg-white border border-[#D3B48C]/40 px-3 py-2 text-xs text-[#162E2D] focus:border-[#4E8281] focus:outline-none"
+                className="w-full rounded-xl bg-white border border-gray-300 px-3.5 py-2 text-xs text-gray-900 font-medium placeholder:text-gray-500 focus:border-[#4E8281] focus:ring-2 focus:ring-[#4E8281]/20 outline-none shadow-xs resize-none"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#D3B48C]/30">
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => setIsRsvpOpen(false)}
@@ -541,9 +579,10 @@ export default function PersonalizedGuestInvitationPage() {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-full bg-[#4E8281] text-white font-bold text-xs uppercase tracking-wider shadow"
+                className="px-5 py-2 rounded-full bg-[#4E8281] text-white font-bold text-xs uppercase tracking-wider shadow flex items-center gap-1.5"
               >
-                Guardar Respuesta
+                <span>Guardar & Notificar por WhatsApp</span>
+                <span>📲</span>
               </button>
             </div>
           </form>

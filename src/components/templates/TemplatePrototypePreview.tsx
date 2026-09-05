@@ -6,6 +6,7 @@ import OshunLogo from '@/components/ui/OshunLogo';
 import { TemplateDefinition } from '@/types';
 import BackgroundEffects from '@/components/invitation/BackgroundEffects';
 import EnvelopeIntro from '@/components/invitation/EnvelopeIntro';
+import SeatingLookupSection from '@/components/invitation/SeatingLookupSection';
 import {
   Sparkles,
   ArrowRight,
@@ -291,6 +292,15 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
       maxCompanionsPerGuest: design?.sections?.rsvp?.maxCompanionsPerGuest || 2,
       allowDietaryRestrictions: true,
       customMessage: design?.sections?.rsvp?.customMessage || 'Agradecemos confirmar tu asistencia antes del 1 de Octubre.',
+    },
+    seating: {
+      enabled: design?.sections?.seating?.enabled ?? true,
+      title: design?.sections?.seating?.title || 'Acomodo de Mesas',
+      subtitle: design?.sections?.seating?.subtitle || 'CONSULTA TU LUGAR',
+      description: design?.sections?.seating?.description || 'Ingresa tu nombre o código para consultar tu mesa asignada.',
+      allowGuestLookup: design?.sections?.seating?.allowGuestLookup ?? true,
+      showTableMap: design?.sections?.seating?.showTableMap ?? true,
+      showZones: design?.sections?.seating?.showZones ?? true,
     },
     qrPass: {
       enabled: design?.sections?.qrPass?.enabled ?? true,
@@ -698,7 +708,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={rsvpName}
                 onChange={(e) => setRsvpName(e.target.value)}
                 placeholder="Ej. Sofía Villarreal"
-                className="w-full px-3.5 py-2 rounded-none bg-white/80 border border-[#A89F91]/50 text-xs text-[#3A332C] outline-none focus:border-[#7A6E60] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-none bg-white border border-[#A89F91] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#7A6E60] transition-colors shadow-2xs"
               />
             </div>
 
@@ -713,7 +723,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={rsvpPhone}
                 onChange={(e) => setRsvpPhone(e.target.value)}
                 placeholder="+52 81 8392 0192"
-                className="w-full px-3.5 py-2 rounded-none bg-white/80 border border-[#A89F91]/50 text-xs text-[#3A332C] outline-none focus:border-[#7A6E60] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-none bg-white border border-[#A89F91] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#7A6E60] transition-colors shadow-2xs"
               />
             </div>
 
@@ -758,7 +768,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                   <select
                     value={rsvpCompanions}
                     onChange={(e) => setRsvpCompanions(Number(e.target.value))}
-                    className="w-full px-3.5 py-2 rounded-none bg-white/80 border border-[#A89F91]/50 text-xs text-[#3A332C] outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-none bg-white border border-[#A89F91] text-xs font-medium text-gray-900 outline-none shadow-2xs"
                   >
                     <option value={1}>1 Pase (Individual)</option>
                     <option value={2}>2 Pases (Con acompañante)</option>
@@ -815,7 +825,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                       value={dietaryCustom}
                       onChange={(e) => setDietaryCustom(e.target.value)}
                       placeholder="Especificar otra alergia o requerimiento especial..."
-                      className="w-full px-3 py-1.5 text-[11px] bg-white border border-[#A89F91]/40 text-[#3A332C] outline-none"
+                      className="w-full px-3 py-2 text-[11px] font-medium bg-white border border-[#A89F91] text-gray-900 placeholder:text-gray-500 outline-none"
                     />
                   </div>
                 </div>
@@ -833,7 +843,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                     value={rsvpMessage}
                     onChange={(e) => setRsvpMessage(e.target.value)}
                     placeholder="Escribe tus buenos deseos para Elena & Mateo..."
-                    className="w-full px-3.5 py-2 rounded-none bg-white/80 border border-[#A89F91]/50 text-xs text-[#3A332C] outline-none focus:border-[#7A6E60] transition-colors resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-none bg-white border border-[#A89F91] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#7A6E60] transition-colors resize-none shadow-2xs"
                   />
                 </div>
               </>
@@ -866,6 +876,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* 9. MÓDULO: ACOMODO DE MESAS */}
+      {sections?.seating?.enabled !== false && (
+        <section className="space-y-4 relative">
+          <EditBadge label="Acomodo de Mesas" position="top-right" />
+          <SeatingLookupSection
+            templateId="minimal-nude"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="nude"
+            primaryColor="#7A6E60"
+            accentColor="#A89F91"
+            cardBackground="rgba(255, 255, 255, 0.75)"
+            textColor="#3A332C"
+            fontFamilyTitle="Cormorant Garamond"
+            fontFamilyBody="Montserrat"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -1563,7 +1593,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={botanicalName}
                 onChange={(e) => setBotanicalName(e.target.value)}
                 placeholder="Ej. Andrés Morales"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF7] border border-[#8A9A86]/40 text-xs text-[#2D3B30] outline-none focus:border-[#4A5D4E] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#8A9A86] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#4A5D4E] transition-colors shadow-2xs"
               />
             </div>
 
@@ -1577,7 +1607,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={botanicalPhone}
                 onChange={(e) => setBotanicalPhone(e.target.value)}
                 placeholder="+52 442 123 4567"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF7] border border-[#8A9A86]/40 text-xs text-[#2D3B30] outline-none focus:border-[#4A5D4E] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#8A9A86] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#4A5D4E] transition-colors shadow-2xs"
               />
             </div>
 
@@ -1620,7 +1650,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                   <select
                     value={botanicalCompanions}
                     onChange={(e) => setBotanicalCompanions(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF7] border border-[#8A9A86]/40 text-xs text-[#2D3B30] outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#8A9A86] text-xs font-medium text-gray-900 outline-none shadow-2xs"
                   >
                     <option value={1}>1 Pase (Personal)</option>
                     <option value={2}>2 Pases (Con acompañante)</option>
@@ -1675,7 +1705,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                       value={botanicalDietaryCustom}
                       onChange={(e) => setBotanicalDietaryCustom(e.target.value)}
                       placeholder="Especificar otra alergia o dieta especial..."
-                      className="w-full px-3 py-2 rounded-lg text-[11px] bg-white border border-[#8A9A86]/40 text-[#2D3B30] outline-none"
+                      className="w-full px-3 py-2 rounded-lg text-[11px] font-medium bg-white border border-[#8A9A86] text-gray-900 placeholder:text-gray-500 outline-none"
                     />
                   </div>
                 </div>
@@ -1692,7 +1722,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                     value={botanicalMessage}
                     onChange={(e) => setBotanicalMessage(e.target.value)}
                     placeholder="Escribe tus mejores deseos para Valeria & Sebastián..."
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF7] border border-[#8A9A86]/40 text-xs text-[#2D3B30] outline-none focus:border-[#4A5D4E] transition-colors resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#8A9A86] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#4A5D4E] transition-colors resize-none shadow-2xs"
                   />
                 </div>
               </>
@@ -1728,6 +1758,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: ACOMODO DE MESAS */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/95 border border-[#8A9A86]/40 shadow-xl max-w-md mx-auto text-center space-y-4">
+          <EditBadge label="Acomodo en Jardín" position="top-right" />
+          <SeatingLookupSection
+            templateId="botanical-garden"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="botanical"
+            primaryColor="#8A9A86"
+            accentColor="#4A5D4E"
+            cardBackground="rgba(255, 255, 255, 0.95)"
+            textColor="#2D3B30"
+            fontFamilyTitle="Playfair Display"
+            fontFamilyBody="Montserrat"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -2027,6 +2077,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         )}
       </section>
 
+      {/* MÓDULO: ACOMODO DE MESAS VIP */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-black/60 border border-[#D3B48C]/40 shadow-2xl backdrop-blur-md space-y-4">
+          <EditBadge label="Smart Seating VIP" position="top-right" theme="gold" />
+          <SeatingLookupSection
+            templateId="tech-luxury"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="dark"
+            primaryColor="#D3B48C"
+            accentColor="#EADBC6"
+            cardBackground="rgba(255, 255, 255, 0.05)"
+            textColor="#FAF6F0"
+            fontFamilyTitle="Cinzel"
+            fontFamilyBody="Montserrat"
+          />
+        </section>
+      )}
+
     </div>
   );
 
@@ -2279,7 +2349,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={genericRsvpName}
                 onChange={(e) => setGenericRsvpName(e.target.value)}
                 placeholder="Familia / Nombre completo"
-                className="w-full px-4 py-3 bg-white border border-[#D3B48C] text-xs text-[#1A1814] outline-none font-playfair"
+                className="w-full px-4 py-3 bg-white border-2 border-[#D3B48C] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none font-playfair shadow-2xs"
               />
             </div>
 
@@ -2290,7 +2360,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
               <select
                 value={genericRsvpCompanions}
                 onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
-                className="w-full px-4 py-3 bg-white border border-[#D3B48C] text-xs text-[#1A1814] outline-none font-playfair"
+                className="w-full px-4 py-3 bg-white border-2 border-[#D3B48C] text-xs font-medium text-gray-900 outline-none font-playfair shadow-2xs"
               >
                 <option value={1}>1 Asiento de Gala</option>
                 <option value={2}>2 Asientos de Gala</option>
@@ -2315,6 +2385,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: ASIGNACIÓN DE MESAS REAL */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 bg-white border-2 border-[#D3B48C] shadow-2xl space-y-4">
+          <EditBadge label="Mesas de Gala" position="top-right" theme="gold" />
+          <SeatingLookupSection
+            templateId="royal-gold"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="gold"
+            primaryColor="#B89758"
+            accentColor="#D3B48C"
+            cardBackground="rgba(255, 255, 255, 0.96)"
+            textColor="#1A1814"
+            fontFamilyTitle="Playfair Display"
+            fontFamilyBody="Lato"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -2599,6 +2689,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: ZONAS & MESAS GLOW */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-[#1C0C36]/90 border-2 border-[#00F0FF] shadow-[0_0_25px_rgba(0,240,255,0.3)] space-y-4">
+          <EditBadge label="Zonas Glow" position="top-right" />
+          <SeatingLookupSection
+            templateId="glow-party"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="neon"
+            primaryColor="#E0218A"
+            accentColor="#00F0FF"
+            cardBackground="rgba(28, 12, 54, 0.85)"
+            textColor="#FFFFFF"
+            fontFamilyTitle="Montserrat"
+            fontFamilyBody="Inter"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -2890,6 +3000,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
         )}
       </section>
 
+      {/* MÓDULO: MESAS DE GRADUACIÓN */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#030712] border border-slate-700 shadow-2xl space-y-4">
+          <EditBadge label="Mesas de Honor" position="top-right" />
+          <SeatingLookupSection
+            templateId="cinematic-night"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="blue"
+            primaryColor="#3B82F6"
+            accentColor="#94A3B8"
+            cardBackground="rgba(15, 23, 42, 0.85)"
+            textColor="#F8FAFC"
+            fontFamilyTitle="Cinzel"
+            fontFamilyBody="Inter"
+          />
+        </section>
+      )}
+
     </div>
   );
 
@@ -3141,7 +3271,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={genericRsvpName}
                 onChange={(e) => setGenericRsvpName(e.target.value)}
                 placeholder="Ej. Familia Gómez..."
-                className="w-full px-4 py-3 rounded-xl bg-[#EAF4FC] border border-[#7AA7C7]/40 text-xs text-[#2C3E50] outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-[#7AA7C7] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none shadow-2xs"
               />
             </div>
 
@@ -3152,7 +3282,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
               <select
                 value={genericRsvpCompanions}
                 onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-[#EAF4FC] border border-[#7AA7C7]/40 text-xs text-[#2C3E50] outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-[#7AA7C7] text-xs font-medium text-gray-900 outline-none shadow-2xs"
               >
                 <option value={1}>1 Persona</option>
                 <option value={2}>2 Personas</option>
@@ -3177,6 +3307,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: ACOMODO FAMILIAR */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-[36px] bg-white/95 border border-[#7AA7C7]/40 shadow-[0_15px_35px_rgba(122,167,199,0.15)] space-y-4">
+          <EditBadge label="Mesas Familiares" position="top-right" />
+          <SeatingLookupSection
+            templateId="sweet-celebration"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="light"
+            primaryColor="#7AA7C7"
+            accentColor="#F5C6CB"
+            cardBackground="rgba(255, 255, 255, 0.95)"
+            textColor="#2C3E50"
+            fontFamilyTitle="Playfair Display"
+            fontFamilyBody="Lato"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -3430,7 +3580,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={genericRsvpName}
                 onChange={(e) => setGenericRsvpName(e.target.value)}
                 placeholder="Nombre completo..."
-                className="w-full px-4 py-3 rounded-xl bg-white border border-[#722F37]/50 text-xs text-[#2A1810] outline-none font-playfair"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-[#722F37] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none font-playfair shadow-2xs"
               />
             </div>
 
@@ -3441,7 +3591,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
               <select
                 value={genericRsvpCompanions}
                 onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-white border border-[#722F37]/50 text-xs text-[#2A1810] outline-none font-playfair"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-[#722F37] text-xs font-medium text-gray-900 outline-none font-playfair shadow-2xs"
               >
                 <option value={1}>1 Pase</option>
                 <option value={2}>2 Pases</option>
@@ -3466,6 +3616,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: MESAS EN EL CLAUSTRO */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-2xl bg-[#FDF8ED] border-2 border-[#722F37] shadow-xl space-y-4">
+          <EditBadge label="Mesas en Claustro" position="top-right" />
+          <SeatingLookupSection
+            templateId="romance-clasico"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="classic"
+            primaryColor="#722F37"
+            accentColor="#C49A45"
+            cardBackground="rgba(253, 248, 237, 0.94)"
+            textColor="#2A1810"
+            fontFamilyTitle="Playfair Display"
+            fontFamilyBody="Lato"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -3714,7 +3884,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={genericRsvpName}
                 onChange={(e) => setGenericRsvpName(e.target.value)}
                 placeholder="Ej. Ing. Roberto Domínguez - Director General"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 text-xs text-[#0F172A] outline-none font-mono"
+                className="w-full px-4 py-3 bg-white border-2 border-[#0F172A] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none font-mono shadow-2xs"
               />
             </div>
 
@@ -3725,7 +3895,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
               <select
                 value={genericRsvpCompanions}
                 onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 text-xs text-[#0F172A] outline-none font-mono"
+                className="w-full px-4 py-3 bg-white border-2 border-[#0F172A] text-xs font-medium text-gray-900 outline-none font-mono shadow-2xs"
               >
                 <option value={1}>1 Acreditación Personal</option>
                 <option value={2}>2 Acreditaciones</option>
@@ -3749,6 +3919,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: ASIGNACIÓN EJECUTIVA DE MESAS */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-none bg-white border border-slate-300 shadow-lg space-y-4">
+          <EditBadge label="Mesas Ejecutivas" position="top-right" />
+          <SeatingLookupSection
+            templateId="elegancia-ejecutiva"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="dark"
+            primaryColor="#475569"
+            accentColor="#B45309"
+            cardBackground="rgba(255, 255, 255, 0.95)"
+            textColor="#0F172A"
+            fontFamilyTitle="Cinzel"
+            fontFamilyBody="Inter"
+          />
+        </section>
+      )}
 
     </div>
   );
@@ -4008,7 +4198,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
                 value={genericRsvpName}
                 onChange={(e) => setGenericRsvpName(e.target.value)}
                 placeholder="Nombre completo..."
-                className="w-full px-4 py-3 rounded-xl bg-[#FDEEE2] border border-[#C85A32]/40 text-xs text-[#2D1B12] outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-[#C85A32] text-xs font-medium text-gray-900 placeholder:text-gray-500 outline-none shadow-2xs"
               />
             </div>
 
@@ -4019,7 +4209,7 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
               <select
                 value={genericRsvpCompanions}
                 onChange={(e) => setGenericRsvpCompanions(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-[#FDEEE2] border border-[#C85A32]/40 text-xs text-[#2D1B12] outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-[#C85A32] text-xs font-medium text-gray-900 outline-none shadow-2xs"
               >
                 <option value={1}>1 Pase</option>
                 <option value={2}>2 Pases</option>
@@ -4045,6 +4235,26 @@ export default function TemplatePrototypePreview({ template }: TemplatePrototype
           </div>
         )}
       </section>
+
+      {/* MÓDULO: MESAS FRENTE AL MAR */}
+      {sections?.seating?.enabled !== false && (
+        <section className="relative p-6 rounded-3xl bg-white/95 border-2 border-[#C85A32]/40 shadow-xl space-y-4">
+          <EditBadge label="Mesas en la Playa" position="top-right" />
+          <SeatingLookupSection
+            templateId="tropical-sunset"
+            title={sections?.seating?.title}
+            subtitle={sections?.seating?.subtitle}
+            description={sections?.seating?.description}
+            theme="tropical"
+            primaryColor="#C85A32"
+            accentColor="#E6953B"
+            cardBackground="rgba(255, 255, 255, 0.94)"
+            textColor="#2D1B12"
+            fontFamilyTitle="Playfair Display"
+            fontFamilyBody="Montserrat"
+          />
+        </section>
+      )}
 
     </div>
   );

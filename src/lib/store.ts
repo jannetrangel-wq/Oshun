@@ -40,6 +40,9 @@ export class InvitaStore {
   public static saveUsers(users: User[]): void {
     if (this.isClient) {
       localStorage.setItem(STORAGE_KEYS.USERS_LIST, JSON.stringify(users));
+      try {
+        window.dispatchEvent(new CustomEvent('oshun_users_updated', { detail: users }));
+      } catch {}
     }
   }
 
@@ -51,16 +54,37 @@ export class InvitaStore {
         return JSON.parse(stored);
       } catch (e) { /* fallback */ }
     }
+    // Fallback check cookie if localStorage was cleared
+    try {
+      const match = document.cookie.match(/(?:^|; )oshun_session=([^;]*)/);
+      if (match && match[1]) {
+        const fromCookie = JSON.parse(decodeURIComponent(match[1]));
+        if (fromCookie) {
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(fromCookie));
+          return fromCookie;
+        }
+      }
+    } catch {}
     return null;
   }
 
   public static setUser(user: User | null): void {
     if (this.isClient) {
       if (user) {
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        const serialized = JSON.stringify(user);
+        localStorage.setItem(STORAGE_KEYS.USER, serialized);
+        // Sync cookie for Next.js middleware protection (7 days)
+        document.cookie = `oshun_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+        document.cookie = `oshun_active_user=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
       } else {
         localStorage.removeItem(STORAGE_KEYS.USER);
+        // Clear cookies for Next.js middleware
+        document.cookie = 'oshun_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'oshun_active_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       }
+      try {
+        window.dispatchEvent(new CustomEvent('oshun_auth_changed', { detail: user }));
+      } catch {}
     }
   }
 
@@ -172,6 +196,9 @@ export class InvitaStore {
   public static saveEvents(events: Event[]): void {
     if (this.isClient) {
       localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+      try {
+        window.dispatchEvent(new CustomEvent('oshun_events_updated', { detail: events }));
+      } catch {}
     }
   }
 
@@ -707,5 +734,150 @@ export class InvitaStore {
     this.saveAllTables(this.getAllTables());
     const tablesUsed = tables.filter((t) => t.assignedGuestIds.length > 0).length;
     return { assigned, tablesUsed };
+  }
+
+  // --- SMART SEATING ENGINE & GUEST LOOKUP (From Smart Guest Control) ---
+  public static generateSmartSeatingSuggestions(eventId: string): {
+    id: string;
+    guestId: string;
+    tableId: string;
+    guestName: string;
+    guestProfile: string;
+    guestGroup: string;
+    guestCount: number;
+    tableName: string;
+    tableNumber: number;
+    tableZone: string;
+    tableCapacity: number;
+    currentOccupancy: number;
+    reason: string;
+  }[] {
+    const tables = this.getTablesForEvent(eventId);
+    const guests = this.getGuestsForEvent(eventId);
+    const allAssigned = new Set(tables.flatMap((t) => t.assignedGuestIds));
+    const unassigned = guests.filter((g) => g.status === 'CONFIRMED' && !allAssigned.has(g.id));
+
+    const suggestions: {
+      id: string;
+      guestId: string;
+      tableId: string;
+      guestName: string;
+      guestProfile: string;
+      guestGroup: string;
+      guestCount: number;
+      tableName: string;
+      tableNumber: number;
+      tableZone: string;
+      tableCapacity: number;
+      currentOccupancy: number;
+      reason: string;
+    }[] = [];
+
+    for (const guest of unassigned) {
+      const guestCount = guest.confirmedCompanions || guest.allowedCompanions || 1;
+      const profile = guest.profile || (guest.group === 'VIP' ? 'VIP' : guest.group === 'Familia' ? 'FAMILIA' : 'AMIGO');
+
+      // Find optimal table
+      const matchingTable = tables.find((t) => {
+        const used = t.assignedGuestIds.reduce((sum, gId) => {
+          const g = guests.find((x) => x.id === gId);
+          return sum + (g?.confirmedCompanions || g?.allowedCompanions || 1);
+        }, 0);
+        const free = t.capacity - used;
+        if (free < guestCount) return false;
+
+        // Check zone or group affinity
+        const zoneName = (t.zone || '').toUpperCase();
+        if (profile === 'VIP' && (zoneName.includes('VIP') || zoneName.includes('HONOR') || zoneName.includes('PRINCIPAL'))) return true;
+        if (profile === 'FAMILIA' && (zoneName.includes('FAMIL') || t.name.toLowerCase().includes('famil'))) return true;
+        if (profile === 'AMIGO' && (zoneName.includes('AMIG') || zoneName.includes('PISTA') || zoneName.includes('TERRAZA'))) return true;
+        if (profile === 'EMPRESA' && (zoneName.includes('EMPRES') || zoneName.includes('CORP'))) return true;
+        
+        return free >= guestCount;
+      });
+
+      if (matchingTable) {
+        const used = matchingTable.assignedGuestIds.reduce((sum, gId) => {
+          const g = guests.find((x) => x.id === gId);
+          return sum + (g?.confirmedCompanions || g?.allowedCompanions || 1);
+        }, 0);
+
+        let reason = `Afinidad de perfil (${profile}) con zona ${matchingTable.zone || 'Principal'}. Capacidad disponible: ${matchingTable.capacity - used} asientos.`;
+        if (guestCount > 1) {
+          reason += ` Mantiene al grupo familiar (${guestCount} personas) juntos en la misma mesa.`;
+        }
+
+        suggestions.push({
+          id: `sug-${guest.id}-${matchingTable.id}`,
+          guestId: guest.id,
+          tableId: matchingTable.id,
+          guestName: guest.name,
+          guestProfile: profile,
+          guestGroup: guest.group,
+          guestCount,
+          tableName: matchingTable.name,
+          tableNumber: matchingTable.tableNumber,
+          tableZone: matchingTable.zone || 'Salón Principal',
+          tableCapacity: matchingTable.capacity,
+          currentOccupancy: used,
+          reason,
+        });
+      }
+    }
+
+    return suggestions;
+  }
+
+  public static findGuestSeatingInfo(eventId: string, query: string): {
+    found: boolean;
+    guest?: Guest;
+    table?: SeatingTable;
+    tableGuests?: Guest[];
+    seatNumber?: number;
+    message?: string;
+  } {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return { found: false, message: 'Ingresa un nombre o código de pase.' };
+
+    const guests = this.getGuestsForEvent(eventId);
+    const tables = this.getTablesForEvent(eventId);
+
+    const guest = guests.find((g) => {
+      const codeMatch = g.code.toLowerCase() === trimmed || g.code.toLowerCase().includes(trimmed);
+      const nameMatch = g.name.toLowerCase().includes(trimmed);
+      const phoneMatch = g.phone.replace(/\D/g, '').includes(trimmed.replace(/\D/g, ''));
+      return codeMatch || nameMatch || (trimmed.length >= 4 && phoneMatch);
+    });
+
+    if (!guest) {
+      return { found: false, message: `No encontramos invitados registrados con "${query}". Verifica la ortografía.` };
+    }
+
+    const table = tables.find((t) => t.assignedGuestIds.includes(guest.id));
+    if (!table) {
+      return {
+        found: true,
+        guest,
+        message: `${guest.name} está confirmado (${guest.confirmedCompanions || guest.allowedCompanions || 1} pases), pero su mesa aún está por asignarse.`,
+      };
+    }
+
+    // Get other guests at this table
+    const tableGuests = table.assignedGuestIds
+      .map((id) => guests.find((g) => g.id === id))
+      .filter((g): g is Guest => Boolean(g));
+
+    // Calculate approximate seat position
+    const guestIndex = table.assignedGuestIds.indexOf(guest.id);
+    const seatNumber = guestIndex !== -1 ? guestIndex + 1 : 1;
+
+    return {
+      found: true,
+      guest,
+      table,
+      tableGuests,
+      seatNumber,
+      message: `¡Asignación encontrada! Mesa ${table.tableNumber} - ${table.name} (${table.zone || 'Salón Principal'}).`,
+    };
   }
 }

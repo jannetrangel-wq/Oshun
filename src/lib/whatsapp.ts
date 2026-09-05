@@ -43,7 +43,7 @@ export function compileTemplate(
 }
 
 export function buildWhatsAppUrl(phone: string, text: string): string {
-  let cleaned = phone.replace(/[^0-9]/g, '');
+  let cleaned = (phone || '528183920192').replace(/[^0-9]/g, '');
   if (cleaned.length === 10) {
     cleaned = `52${cleaned}`;
   }
@@ -52,3 +52,55 @@ export function buildWhatsAppUrl(phone: string, text: string): string {
 }
 
 export const getWhatsAppLink = buildWhatsAppUrl;
+
+export interface RsvpNotificationPayload {
+  event: Event;
+  guestName: string;
+  guestPhone: string;
+  attending: 'YES' | 'NO';
+  companionsCount: number;
+  guestCode?: string;
+  dietary?: string;
+  notes?: string;
+  hostPhone?: string;
+}
+
+export function buildRsvpNotificationUrl({
+  event,
+  guestName,
+  guestPhone,
+  attending,
+  companionsCount,
+  guestCode,
+  dietary,
+  notes,
+  hostPhone = '528183920192',
+}: RsvpNotificationPayload): string {
+  const statusEmoji = attending === 'YES' ? '✅ *¡SÍ ASISTIRÉ!*' : '❌ *NO PODRÉ ASISTIR*';
+  const passesText = companionsCount === 1 ? '1 persona' : `${companionsCount} personas`;
+
+  let text = `✨ *CONFIRMACIÓN DE ASISTENCIA — OSHUN*\n\n`;
+  text += `📅 *Evento:* ${event.title}\n`;
+  text += `📍 *Fecha y Lugar:* ${formatDate(event.date)} • ${event.venueName}\n\n`;
+  text += `👤 *Invitado:* ${guestName}\n`;
+  text += `📱 *Teléfono:* ${guestPhone}\n`;
+  text += `🔔 *Respuesta:* ${statusEmoji}\n`;
+
+  if (attending === 'YES') {
+    text += `🎟️ *Pases Confirmados:* ${passesText}\n`;
+    if (guestCode) {
+      text += `🎫 *Código de Boleto:* #${guestCode}\n`;
+    }
+    if (dietary && dietary !== 'Ninguna' && dietary.trim()) {
+      text += `🍽️ *Restricciones/Dieta:* ${dietary}\n`;
+    }
+  }
+
+  if (notes && notes.trim()) {
+    text += `💬 *Mensaje:* "${notes.trim()}"\n`;
+  }
+
+  text += `\n_Enviado automáticamente desde la invitación digital OSHUN_`;
+
+  return buildWhatsAppUrl(hostPhone, text);
+}
